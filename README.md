@@ -1,0 +1,66 @@
+# Jejak Musafir
+
+Web app (PWA) buat musafir: rest area tol, waktu shalat real time dari GPS, dan laporan kondisi toilet, mukena, parkir dari sesama musafir.
+
+Isi versi ini:
+
+- **Live**: titik biru dari GPS, jadwal shalat dihitung dari posisi asli (metode Kemenag), rest area di depan lengkap jarak dan jam tiba, rekomendasi singgah buat shalat, notifikasi 15 menit sebelum masuk waktu, layar dijaga tetap nyala.
+- **Rencana**: isi kota asal, tujuan, jam berangkat. Muncul rest area yang dilewati plus waktu shalat yang masuk di jalan.
+- **Lapor kondisi**: nilai kebersihan, fasilitas, catatan, plus titik GPS kalau pelapor lagi di lokasi.
+- **Offline**: halaman dan potongan peta yang pernah dibuka tetap bisa dibuka pas sinyal hilang.
+- 118 rest area: Trans Jawa, Jagorawi, Cipularang–Purbaleunyi, Pandaan–Malang, Trans Sumatera.
+
+## Coba di laptop
+
+```bash
+npm install
+npm run dev
+```
+
+Buka http://localhost:3000. GPS di laptop kurang akurat, pakai tombol **Coba simulasi** buat lihat cara kerjanya.
+
+Tanpa file `.env.local`, aplikasi tetap jalan. Cuma tombol Lapor kondisi yang mati.
+
+## Sambungkan Firebase (biar laporan jalan)
+
+1. Buka [Firebase Console](https://console.firebase.google.com), bikin project baru (misal `jejak-musafir`).
+2. **Build > Firestore Database** > Create database > pilih lokasi `asia-southeast2 (Jakarta)` > mode production.
+3. **Build > Authentication** > Get started > tab Sign-in method > aktifkan **Anonymous**.
+4. **Firestore > Rules**: hapus isinya, tempel isi file `firestore.rules` di project ini, lalu Publish.
+5. **Project settings > Your apps** > tambah Web app. Salin nilai config-nya.
+6. Salin `.env.example` jadi `.env.local`, isi nilainya.
+
+## Deploy ke Vercel
+
+1. Upload folder ini ke repo GitHub baru (tanpa `node_modules`, `.next`, `out`).
+2. Di [Vercel](https://vercel.com/new), import repo-nya. Framework otomatis kebaca Next.js.
+3. Di **Environment Variables**, masukin 6 variabel `NEXT_PUBLIC_FIREBASE_...` yang sama kayak `.env.local`.
+4. Deploy. Setelah jadi, buka **Firebase > Authentication > Settings > Authorized domains**, tambahin domain Vercel lu (misal `jejak-musafir.vercel.app`).
+
+Vercel otomatis pakai HTTPS, jadi akses lokasi GPS langsung bisa dipakai.
+
+## Pasang di HP
+
+- **Android (Chrome)**: buka webnya, menu titik tiga > Add to Home screen / Install app.
+- **iPhone (Safari)**: tombol Share > Add to Home Screen. Notifikasi di iPhone cuma jalan kalau udah dipasang begini.
+
+## Hal yang perlu diketahui
+
+- **Posisi rest area di peta masih perkiraan**, dihitung dari posisi KM di antara kota. Laporan yang bawa titik GPS bakal jadi bahan buat benerin. Kalau udah ada koordinat asli, tambahin `"lat"` dan `"lon"` di `data/restarea.json` dan posisinya langsung dipakai.
+- Update GPS berhenti kalau layar mati atau pindah aplikasi (batasan semua web app). Lanjut lagi pas dibuka.
+- Jadwal shalat pakai WIB, cocok buat Jawa dan Sumatera. Kalau nanti nambah Bali atau wilayah WITA, perlu disesuaikan di `lib/prayer.js`.
+- Peta pakai OpenStreetMap. Gratis, tapi kalau trafik sudah besar sebaiknya pindah ke penyedia tile berbayar (MapTiler, Stadia, dll).
+- Moderasi laporan (hapus spam) lewat Firebase Console > Firestore > koleksi `laporan`.
+
+## Struktur
+
+```
+app/            halaman & gaya
+components/     LiveView, PlanView, MapView, StopCard, ReportSheet
+lib/route.js    garis tol, kota, snap GPS ke jalur, perencana rute
+lib/prayer.js   hitung jadwal shalat
+lib/trip.js     timeline perjalanan & rest area di depan
+data/           daftar rest area
+public/sw.js    service worker offline
+firestore.rules aturan keamanan database
+```

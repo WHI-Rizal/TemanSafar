@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Laporan kondisi dari musafir: semua boleh baca, yang login (anonim) boleh nambah.
+    // Nggak ada yang bisa ubah atau hapus dari aplikasi. Moderasi lewat Firebase Console.
+    match /laporan/{id} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['masjidId','kebersihan','mukena','sarung','bus','rebahan','difabel','catatan','lokasi','uid','ts'])
+        && request.resource.data.masjidId is string && request.resource.data.masjidId.size() <= 60
+        && request.resource.data.kebersihan is int
+        && request.resource.data.kebersihan >= 1 && request.resource.data.kebersihan <= 5
+        && (!('catatan' in request.resource.data) || (request.resource.data.catatan is string && request.resource.data.catatan.size() <= 200))
+        && (!('lokasi' in request.resource.data) || (request.resource.data.lokasi.lat is number && request.resource.data.lokasi.lon is number))
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.ts == request.time;
+      allow update, delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
