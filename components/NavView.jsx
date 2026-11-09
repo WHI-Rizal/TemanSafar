@@ -123,9 +123,9 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
     const step = Math.max(500, Math.min(2000, POI_WINDOW / 160));
     const pts = sample(rt.line, fromAlong - 2000, fromAlong + POI_WINDOW, step);
     try {
-      const raw = await fetchPois(pts);
-      raw.forEach((p) => poiCache.current.set(p.id, p));
-      if (routeRef.current === rt) setPois(placePois(rt, [...poiCache.current.values()]));
+      // tampilkan bertahap: kotak terdekat duluan
+      const show = (list) => { list.forEach((p) => poiCache.current.set(p.id, p)); if (routeRef.current === rt) setPois(placePois(rt, [...poiCache.current.values()])); };
+      show(await fetchPois(pts, undefined, show));
     } catch { /* tanpa data masjid, navigasi tetap jalan */ }
   }, []);
 
