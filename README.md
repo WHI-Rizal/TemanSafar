@@ -4,6 +4,7 @@ Web app (PWA) buat musafir: rest area tol, waktu shalat real time dari GPS, dan 
 
 Isi versi ini:
 
+- **Navigasi** (tab utama): cari tujuan, rute jalan asli, banner belokan ("Belok kanan ke Jl. X, 200 m"), suara bahasa Indonesia, peta ikut arah hadap, hitung ulang rute kalau salah jalan. Di atas rutenya ada titik masuk waktu shalat dan masjid/musala/rest area yang keburu disinggahi. Tap **Singgah** buat nambah masjid itu ke rute.
 - **Live**: titik biru dari GPS, jadwal shalat dihitung dari posisi asli (metode Kemenag), rest area di depan lengkap jarak dan jam tiba, rekomendasi singgah buat shalat, notifikasi 15 menit sebelum masuk waktu, layar dijaga tetap nyala.
 - **Rencana**: isi kota asal, tujuan, jam berangkat. Muncul rest area yang dilewati plus waktu shalat yang masuk di jalan.
 - **Lapor kondisi**: nilai kebersihan, fasilitas, catatan, plus titik GPS kalau pelapor lagi di lokasi.
@@ -20,6 +21,19 @@ npm run dev
 Buka http://localhost:3000. GPS di laptop kurang akurat, pakai tombol **Coba simulasi** buat lihat cara kerjanya.
 
 Tanpa file `.env.local`, aplikasi tetap jalan. Cuma tombol Lapor kondisi yang mati.
+
+## Layanan peta yang dipakai
+
+| Fungsi | Layanan | Biaya |
+|---|---|---|
+| Peta | OpenFreeMap (data OpenStreetMap) | Gratis, tanpa API key |
+| Cari tempat | Photon (komoot) | Gratis |
+| Rute & belokan | OSRM server demo, atau Mapbox kalau diisi token | OSRM gratis tapi bukan buat trafik besar |
+| Masjid, musala, rest area | Overpass API (data OpenStreetMap) | Gratis, pakai wajar |
+
+**Sebelum dipakai banyak orang**, ganti rute ke Mapbox: daftar di mapbox.com, ambil access token, isi `NEXT_PUBLIC_MAPBOX_TOKEN` di Vercel. Free tier-nya 100 ribu permintaan rute per bulan, dan sudah pakai data macet.
+
+Google Maps sengaja nggak dipakai buat navigasi di dalam aplikasi, karena aturan Google melarang API mereka dipakai buat bikin navigasi belokan sendiri.
 
 ## Sambungkan Firebase (biar laporan jalan)
 
@@ -47,6 +61,9 @@ Vercel otomatis pakai HTTPS, jadi akses lokasi GPS langsung bisa dipakai.
 ## Hal yang perlu diketahui
 
 - **Posisi rest area di peta masih perkiraan**, dihitung dari posisi KM di antara kota. Laporan yang bawa titik GPS bakal jadi bahan buat benerin. Kalau udah ada koordinat asli, tambahin `"lat"` dan `"lon"` di `data/restarea.json` dan posisinya langsung dipakai.
+- Navigasi butuh internet buat ambil rute dan data masjid. Kalau sinyal hilang di tengah jalan, rute yang sudah diambil tetap jalan, cuma hitung ulang rute dan data masjid baru yang nunggu sinyal.
+- Suara pakai suara bawaan HP. Kalau suaranya kedengeran kayak bahasa Inggris, pasang bahasa Indonesia di pengaturan Text-to-speech HP.
+- Buat nyoba dari rumah: di tab Navigasi isi kolom **Dari** dengan kota lain, nanti perjalanannya disimulasikan.
 - Update GPS berhenti kalau layar mati atau pindah aplikasi (batasan semua web app). Lanjut lagi pas dibuka.
 - Jadwal shalat pakai WIB, cocok buat Jawa dan Sumatera. Kalau nanti nambah Bali atau wilayah WITA, perlu disesuaikan di `lib/prayer.js`.
 - Peta pakai OpenStreetMap. Gratis, tapi kalau trafik sudah besar sebaiknya pindah ke penyedia tile berbayar (MapTiler, Stadia, dll).
@@ -56,10 +73,12 @@ Vercel otomatis pakai HTTPS, jadi akses lokasi GPS langsung bisa dipakai.
 
 ```
 app/            halaman & gaya
-components/     LiveView, PlanView, MapView, StopCard, ReportSheet
+components/     NavView, NavMap, LiveView, PlanView, MapView, StopCard, ReportSheet
 lib/route.js    garis tol, kota, snap GPS ke jalur, perencana rute
 lib/prayer.js   hitung jadwal shalat
 lib/trip.js     timeline perjalanan & rest area di depan
+lib/nav.js      rute, teks belokan, masjid di rute, waktu shalat di rute
+lib/geo.js      hitungan garis rute (jarak, proyeksi GPS, arah)
 data/           daftar rest area
 public/sw.js    service worker offline
 firestore.rules aturan keamanan database
