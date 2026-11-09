@@ -5,7 +5,7 @@ Web app (PWA) buat musafir: rest area tol, waktu shalat real time dari GPS, dan 
 Isi versi ini:
 
 - **Navigasi** (tab utama): cari tujuan, rute jalan asli, banner belokan ("Belok kanan ke Jl. X, 200 m"), suara bahasa Indonesia, peta ikut arah hadap, hitung ulang rute kalau salah jalan. Di atas rutenya ada titik masuk waktu shalat dan masjid/musala/rest area yang keburu disinggahi. Tap **Singgah** buat nambah masjid itu ke rute.
-- **Live**: titik biru dari GPS, jadwal shalat dihitung dari posisi asli (metode Kemenag), rest area di depan lengkap jarak dan jam tiba, rekomendasi singgah buat shalat, notifikasi 15 menit sebelum masuk waktu, layar dijaga tetap nyala.
+- **Jalan tanpa tujuan** (di tab Navigasi): nggak perlu isi tujuan. Jadwal shalat dari posisi GPS, masjid & rest area asli di depan, rekomendasi singgah, notifikasi 15 menit sebelum masuk waktu, layar dijaga tetap nyala. Tap Singgah buat langsung dituntun ke masjidnya.
 - **Rencana**: isi kota asal, tujuan, jam berangkat. Muncul rest area yang dilewati plus waktu shalat yang masuk di jalan.
 - **Lapor kondisi**: nilai kebersihan, fasilitas, catatan, plus titik GPS kalau pelapor lagi di lokasi.
 - **Offline**: halaman dan potongan peta yang pernah dibuka tetap bisa dibuka pas sinyal hilang.
@@ -73,7 +73,7 @@ Vercel otomatis pakai HTTPS, jadi akses lokasi GPS langsung bisa dipakai.
 
 ```
 app/            halaman & gaya
-components/     NavView, NavMap, LiveView, PlanView, MapView, StopCard, ReportSheet
+components/     NavView, FreeDrive, NavMap, PlanView, StopCard, ReportSheet
 lib/route.js    garis tol, kota, snap GPS ke jalur, perencana rute
 lib/prayer.js   hitung jadwal shalat
 lib/trip.js     timeline perjalanan & rest area di depan
