@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import LiveView from "./LiveView";
+import NavView from "./NavView";
 import PlanView from "./PlanView";
 import ReportSheet from "./ReportSheet";
 import { firebaseReady, subscribeReports } from "../lib/firebase";
@@ -7,7 +8,7 @@ import { firebaseReady, subscribeReports } from "../lib/firebase";
 const FILTERS = [["bersih", "Toilet bersih (4+)"], ["mukena", "Ada mukena"], ["bus", "Muat bus"], ["rebahan", "Bisa rebahan"], ["difabel", "Akses difabel"]];
 
 export default function App() {
-  const [tab, setTab] = useState("live");
+  const [tab, setTab] = useState("nav");
   const [filters, setFilters] = useState(new Set());
   const [reports, setReports] = useState([]);
   const [reportFor, setReportFor] = useState(null);
@@ -15,7 +16,7 @@ export default function App() {
   const [toast, setToast] = useState("");
 
   useEffect(() => {
-    try { const t = localStorage.getItem("jm-tab"); if (t === "live" || t === "rencana") setTab(t); } catch {}
+    try { const t = localStorage.getItem("jm-tab"); if (t === "nav" || t === "live" || t === "rencana") setTab(t); } catch {}
     try { const c = JSON.parse(localStorage.getItem("jm-reports") || "[]"); if (Array.isArray(c)) setReports(c); } catch {}
     const off = subscribeReports((rs) => { setReports(rs); try { localStorage.setItem("jm-reports", JSON.stringify(rs)); } catch {} });
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") navigator.serviceWorker.register("/sw.js").catch(() => {});
@@ -37,14 +38,16 @@ export default function App() {
     <>
       <header className="top">
         <div className="wrap">
-          <div className="brand"><h1>Jejak Musafir</h1><span>{tab === "live" ? "Live dari GPS" : "Rencana perjalanan"}</span></div>
+          <div className="brand"><h1>Jejak Musafir</h1><span>{tab === "nav" ? "Navigasi" : tab === "live" ? "Live dari GPS" : "Rencana perjalanan"}</span></div>
           <div className="tabs" role="tablist">
+            <button role="tab" type="button" aria-selected={tab === "nav"} onClick={() => pick("nav")}>Navigasi</button>
             <button role="tab" type="button" aria-selected={tab === "live"} onClick={() => pick("live")}>Live</button>
             <button role="tab" type="button" aria-selected={tab === "rencana"} onClick={() => pick("rencana")}>Rencana</button>
           </div>
         </div>
       </header>
       <main>
+        {tab === "nav" && <NavView reports={reports} onReport={onReport} canReport={firebaseReady} setLiveFix={setLiveFix} />}
         <div style={{ display: tab === "live" ? "block" : "none" }}>
           <LiveView {...common} setLiveFix={setLiveFix} />
         </div>
