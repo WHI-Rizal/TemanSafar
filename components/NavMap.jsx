@@ -83,9 +83,13 @@ export default function NavMap({ route, pois, pickIds, events, me, mode, follow,
       }
       meMk.current.setLngLat([me.lon, me.lat]).setRotation(me.bearing || 0);
       if (mode === "nav" && follow) {
+        // taruh panah di tengah area peta yang kelihatan (di antara banner atas dan panel bawah), agak ke bawah
         const h = m.getContainer().clientHeight;
+        const sheet = document.querySelector(".navsheet")?.offsetHeight || h * 0.3;
+        const top = Math.min(h * 0.45, (document.querySelector(".topstack")?.offsetHeight || 100) + 90);
+        const bottom = Math.min(h * 0.6, sheet);
         const z = me.speed > 22 ? 15.3 : me.speed > 12 ? 16 : 16.8;
-        m.easeTo({ center: [me.lon, me.lat], bearing: me.bearing || 0, pitch: 55, zoom: z, offset: [0, h * 0.22], duration: 950, easing: (t) => t });
+        m.easeTo({ center: [me.lon, me.lat], bearing: me.bearing || 0, pitch: 55, zoom: z, padding: { top, bottom, left: 0, right: 0 }, duration: 950, easing: (t) => t });
       }
     });
   }, [me, mode, follow]);
