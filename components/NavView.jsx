@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import NavMap from "./NavMap";
+import FreeDrive from "./FreeDrive";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
 import { jam, nextPrayer, currentEnds, SHALAT } from "../lib/prayer";
@@ -98,6 +99,8 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
   const [done, setDone] = useState({});
   const [atStop, setAtStop] = useState(false);
   const [rerouting, setRerouting] = useState(false);
+  const [free, setFree] = useState(null);        // mode jalan tanpa tujuan: { simulate }
+  const [target, setTarget] = useState(null);    // masjid tujuan kalau berangkat dari mode tanpa tujuan
 
   const watch = useRef(null), wake = useRef(null), said = useRef(new Set()), poiCache = useRef(new Map());
   const lastFetch = useRef(-1e9), off = useRef(0), lastReroute = useRef(0), factor = useRef(1), started = useRef(null), seg = useRef(1);
@@ -200,13 +203,13 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
     return () => document.removeEventListener("visibilitychange", v);
   }, [phase]);
 
-  const begin = () => {
+  const begin = (rt = route, simulated = !!origin) => {
     said.current = new Set(); started.current = null; factor.current = 1; off.current = 0;
     keepAwake();
     try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch {}
-    speak(instr(route.steps[0]) + (route.steps[1] ? `, lalu ${instr(route.steps[1]).toLowerCase()}` : ""), muted); // juga membuka izin suara di iOS
+    speak(instr(rt.steps[0]) + (rt.steps[1] ? `, lalu ${instr(rt.steps[1]).toLowerCase()}` : ""), muted); // juga membuka izin suara di iOS
     setFollow(true); setSheet(false); setPhase("nav");
-    if (origin) { setSim({ realStart: Date.now(), simStart: Date.now() }); return; }
+    if (simulated) { setSim({ realStart: Date.now(), simStart: Date.now() }); return; }
     watch.current = navigator.geolocation.watchPosition(
       (p) => onFixRef.current({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, speed: p.coords.speed, heading: p.coords.heading, t: Date.now() }),
       (e) => setErr(e.code === 1 ? "Akses lokasi ditolak. Izinkan lokasi buat situs ini di pengaturan browser." : "Sinyal GPS lemah. Navigasi lanjut begitu lokasi kebaca lagi."),
@@ -220,8 +223,21 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
     watch.current = null; setSim(null);
     try { wake.current?.release(); } catch {}
     try { window.speechSynthesis?.cancel(); } catch {}
-    setPhase("setup"); setRoute(null); setStop(null); setAtStop(false); setPois([]); setState(null);
+    setPhase("setup"); setRoute(null); setStop(null); setAtStop(false); setPois([]); setState(null); setTarget(null);
   };
+
+  // dari mode tanpa tujuan: langsung dituntun ke masjid yang dipilih
+  const startTo = async (p, here, simulated) => {
+    const from = here || gps;
+    if (!from) return;
+    setFree(null);
+    setDest({ nama: p.nama, detail: "", lon: p.lon, lat: p.lat });
+    setOrigin(simulated ? { nama: "Posisi simulasi", lon: from[0], lat: from[1] } : null);
+    setTarget({ ...p, simulated });
+    const rt = await plan(from, { lon: p.lon, lat: p.lat }, null, "setup");
+    if (rt) { setStop(null); setAtStop(false); setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); begin(rt, simulated); }
+  };
+  const backToFree = () => { const s = !!target?.simulated; end(); setFree({ simulate: s }); };
   useEffect(() => () => { if (watch.current != null) navigator.geolocation.clearWatch(watch.current); }, []);
 
   // simulasi: jalan di sepanjang rute sesuai perkiraan waktu tempuh, dipercepat
@@ -318,16 +334,24 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
   const showMap = phase !== "setup" && phase !== "routing" || (phase === "routing" && route);
   const aheadList = (sel?.ahead || []).slice(0, 8);
 
+  if (free) {
+    return <FreeDrive simulate={free.simulate} reports={reports} onReport={onReport} canReport={canReport} setLiveFix={setLiveFix}
+      onGo={startTo} onSetDest={() => setFree(null)} onExit={() => setFree(null)} />;
+  }
+
   if (!showMap) {
     return (
       <div className="wrap navsetup">
-        <h2>Navigasi sambil ngikutin waktu shalat</h2>
+        <h2>Mau jalan ke mana hari ini?</h2>
         <p className="note">Rute jalan asli, petunjuk belokan bersuara, plus masjid yang keburu disinggahi tiap masuk waktu shalat.</p>
         <PlaceField id="tujuan" label="Mau ke mana?" value={dest} onPick={setDest} placeholder="Cari kota, masjid, alamat" near={gps} />
         <PlaceField id="asal" label="Dari" value={origin} onPick={setOrigin} placeholder="Lokasi saya (GPS)" near={gps} allowMe />
         {origin && <p className="note">Titik awal bukan lokasi lu sekarang, jadi perjalanan bakal disimulasikan ({SIM_SPEED}x lebih cepat).</p>}
         {err && <div className="err" role="alert">{err}</div>}
         <button className="bigbtn" type="button" onClick={preview} disabled={phase === "routing"}>{phase === "routing" ? "Menghitung rute…" : "Lihat rute"}</button>
+        <div className="orline"><span>atau</span></div>
+        <button className="ghost" type="button" onClick={() => { setErr(""); setFree({ simulate: false }); }}>Jalan tanpa tujuan</button>
+        <p className="note">Nggak perlu isi tujuan. Langsung jalan, nanti muncul jadwal shalat dari posisi lu plus masjid dan rest area di depan. <button className="linkbtn inline" type="button" onClick={() => setFree({ simulate: true })}>Coba simulasinya</button></p>
         <p className="note">Rute dari {ROUTE_PROVIDER}, peta &amp; data masjid dari OpenStreetMap. Jadwal shalat metode Kemenag.</p>
       </div>
     );
@@ -338,6 +362,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
       <NavMap route={route} pois={pois} pickIds={pickIds} events={evPins} me={me} mode={phase === "preview" ? "preview" : "nav"} follow={follow}
         onUserMove={() => setFollow(false)} onPoi={(p) => setSheet(p)} />
 
+      <div className="topstack">
       {phase === "nav" && next && !atStop && (
         <div className="banner" role="status" aria-live="polite">
           <div className="banner-main">
@@ -353,6 +378,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
           {rerouting && " · menghitung ulang rute…"}
         </div>
       )}
+      </div>
       {phase === "nav" && (
         <div className="navbtns">
           <button type="button" onClick={() => { if (!muted) try { window.speechSynthesis?.cancel(); } catch {} setMuted(!muted); }} aria-label={muted ? "Nyalakan suara" : "Matikan suara"} aria-pressed={muted}>
@@ -372,7 +398,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
               <PrayerPlan sel={sel} along={0} onStop={goStop} stop={stop} />
               <div className="row2">
                 <button className="ghost" type="button" onClick={end}>Kembali</button>
-                <button className="bigbtn" type="button" onClick={begin}>{origin ? "Simulasikan" : "Mulai navigasi"}</button>
+                <button className="bigbtn" type="button" onClick={() => begin()}>{origin ? "Simulasikan" : "Mulai navigasi"}</button>
               </div>
             </>
           )}
@@ -412,8 +438,17 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
             </div>
           )}
 
-          {phase === "arrived" && (
+          {phase === "arrived" && !target && (
             <div className="arrive"><b>Sampai di tujuan. Alhamdulillah.</b><div className="row2"><button className="bigbtn" type="button" onClick={end}>Selesai</button></div></div>
+          )}
+          {phase === "arrived" && target && (
+            <div className="arrive">
+              <b>Sampai di {target.nama}.</b><span>Selamat shalat. Sekalian bantu musafir lain dengan lapor kondisinya.</span>
+              <div className="row2">
+                <button className="ghost" type="button" onClick={() => onReport(poiStop(target))} disabled={!canReport}>Lapor kondisi</button>
+                <button className="bigbtn" type="button" onClick={backToFree}>Lanjut jalan</button>
+              </div>
+            </div>
           )}
 
           {phase === "routing" && <p className="note">Menghitung rute…</p>}
