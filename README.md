@@ -29,7 +29,7 @@ Tanpa file `.env.local`, aplikasi tetap jalan. Cuma tombol Lapor kondisi yang ma
 | Peta | OpenFreeMap (data OpenStreetMap) | Gratis, tanpa API key |
 | Cari tempat | Photon (komoot) | Gratis |
 | Rute & belokan | OSRM server demo, atau Mapbox kalau diisi token | OSRM gratis tapi bukan buat trafik besar |
-| Masjid, musala, rest area | Overpass API (data OpenStreetMap) | Gratis, pakai wajar |
+| Masjid, musala, rest area | Photon (data OpenStreetMap), lewat /api/pois + cache CDN | Gratis, pakai wajar |
 
 **Sebelum dipakai banyak orang**, ganti rute ke Mapbox: daftar di mapbox.com, ambil access token, isi `NEXT_PUBLIC_MAPBOX_TOKEN` di Vercel. Free tier-nya 100 ribu permintaan rute per bulan, dan sudah pakai data macet.
 
