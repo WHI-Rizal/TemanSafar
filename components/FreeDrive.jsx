@@ -102,7 +102,8 @@ export default function FreeDrive({ simulate, reports, onReport, canReport, setL
     const pts = [fix.p];
     if (hdg != null) for (let d = 2000; d <= AHEAD_KM * 1000; d += 2000) pts.push(dest(fix.p, hdg, d));
     setLoading(true);
-    fetchPois(pts).then((r) => setCache((c) => { const n = new Map(c); r.forEach((p) => n.set(p.id, p)); return n; }))
+    const add = (r) => setCache((c) => { const n = new Map(c); r.forEach((p) => n.set(p.id, p)); return n; });
+    fetchPois(pts, undefined, add).then(add)
       .catch(() => {}).finally(() => setLoading(false));
   }, [fix, hdg]);
 
