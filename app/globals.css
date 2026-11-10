@@ -358,3 +358,5 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .fromline b { color: var(--ink); font-weight: 700; }
 .home-body { padding-bottom: 50vh; }
 @media (min-width: 700px) { .home-body { padding-bottom: 40px; } }
+.sf-list .sf-more { border-top: 1px dashed var(--line); border-radius: 0 0 10px 10px; margin-top: 4px; }
+.sf-list .sf-more b { color: var(--sign); }
