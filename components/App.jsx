@@ -37,7 +37,10 @@ export default function App() {
     <>
       <header className="top">
         <div className="wrap">
-          <div className="brand"><h1>Jejak Musafir</h1><span>{tab === "nav" ? "Navigasi" : "Rencana perjalanan"}</span></div>
+          <div className="brand">
+            <svg className="logo" viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#e8b21c" /><path d="M20 8c3.6 2.8 7 4.9 7 9.6H13c0-4.7 3.4-6.8 7-9.6z" fill="#0d6b45" /><path d="M12.5 17.6h15v4.4h-15z" fill="#0d6b45" /><path d="M17.5 33l1.2-9h2.6l1.2 9z" fill="#0d6b45" /><path d="M20 25.5v1.6M20 29v1.6" stroke="#e8b21c" strokeWidth="1.2" /></svg>
+            <div><h1>Teman Safar</h1><span>Teman shalat di perjalanan</span></div>
+          </div>
           <div className="tabs" role="tablist">
             <button role="tab" type="button" aria-selected={tab === "nav"} onClick={() => pick("nav")}>Navigasi</button>
             <button role="tab" type="button" aria-selected={tab === "rencana"} onClick={() => pick("rencana")}>Rencana</button>
@@ -45,14 +48,15 @@ export default function App() {
         </div>
       </header>
       <main>
-        {tab === "nav" && <NavView reports={reports} onReport={onReport} canReport={firebaseReady} setLiveFix={setLiveFix} />}
+        {tab === "nav" && <NavView reports={reports} onReport={onReport} canReport={firebaseReady} setLiveFix={setLiveFix} onPlan={() => pick("rencana")} />}
         {tab === "rencana" && <PlanView {...common} />}
-        <div className="wrap">
-          <p className="note" style={{ paddingBottom: 32 }}>
-            Data rest area dari rekap mudik Trans Jawa dan Trans Sumatera. Posisi di peta masih perkiraan dan bakal makin pas dari laporan musafir.
-            {!firebaseReady && " Fitur laporan belum aktif karena database belum disambungkan."}
-          </p>
-        </div>
+        {tab === "rencana" && (
+          <div className="wrap">
+            <p className="note" style={{ paddingBottom: 32 }}>
+              Data rest area dari rekap mudik Trans Jawa dan Trans Sumatera. Posisinya masih perkiraan, buat perjalanan beneran pakai tab Navigasi.
+            </p>
+          </div>
+        )}
       </main>
       {reportFor && <ReportSheet stop={reportFor} liveFix={liveFix} onClose={() => setReportFor(null)} onSent={() => { setReportFor(null); say("Laporan terkirim. Jazakallah khair!"); }} />}
       {toast && <div className="toast" role="status">{toast}</div>}
