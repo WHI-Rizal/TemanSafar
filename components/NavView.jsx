@@ -3,6 +3,7 @@ import NavMap from "./NavMap";
 import FreeDrive from "./FreeDrive";
 import Home from "./Home";
 import SearchField, { saveRecent } from "./SearchField";
+import Sheet, { useMini } from "./Sheet";
 import { speak as voiceSpeak, stop as voiceStop } from "../lib/voice";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
@@ -102,6 +103,9 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const [atStop, setAtStop] = useState(false);
   const [rerouting, setRerouting] = useState(false);
   const [showFrom, setShowFrom] = useState(false);
+  const [readMini, writeMini] = useMini();
+  const [mini, setMiniState] = useState(readMini);
+  const setMini = (v) => { setMiniState(v); writeMini(v); };
   const [free, setFree] = useState(null);        // mode jalan tanpa tujuan: { simulate }
   const [target, setTarget] = useState(null);    // masjid tujuan kalau berangkat dari mode tanpa tujuan
 
@@ -427,8 +431,16 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
         </div>
       )}
 
-      <div className="navsheet">
-        <div className="wrap">
+      <Sheet collapsible={phase === "nav" && !atStop} mini={mini} onToggle={setMini} summary={phase === "nav" && route ? (
+        <div className="mini-row">
+          <button type="button" className="mini-main" onClick={() => setMini(false)} aria-label="Buka panel info">
+            <b className="eta-big">{fmtDur(remainSec)}</b>
+            <span>{fmtDist(remain)} · tiba ± {jam(now + remainSec * 1000)}</span>
+            {(stop || mainPick?.poi) && <small className="mini-pick">{stop ? `Singgah: ${stop.nama} · ${fmtDist(Math.max(0, (route.steps.find((s) => s.waypoint)?.along || 0) - along))}` : `${mainPick.nama}: ${mainPick.poi.nama} · ${fmtDist(mainPick.poi.along - along)}`}</small>}
+          </button>
+          <button className="xbtn" type="button" onClick={end} aria-label="Akhiri navigasi">✕</button>
+        </div>
+      ) : null}>
           {phase === "preview" && (
             <>
               <div className="eta-row">
@@ -493,8 +505,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
           )}
 
           {phase === "routing" && <p className="note">Menghitung rute…</p>}
-        </div>
-      </div>
+      </Sheet>
 
       {sheet && typeof sheet === "object" && (
         <PoiSheet p={sheet} along={along} route={route} now={now} f={factor.current} reports={reports} onClose={() => setSheet(false)}
