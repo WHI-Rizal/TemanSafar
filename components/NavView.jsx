@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import NavMap from "./NavMap";
 import FreeDrive from "./FreeDrive";
 import Home from "./Home";
+import SearchField, { saveRecent } from "./SearchField";
 import { speak as voiceSpeak, stop as voiceStop } from "../lib/voice";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
@@ -46,7 +47,7 @@ function PlaceField({ id, label, value, onPick, placeholder, near, allowMe }) {
   const [busy, setBusy] = useState(false);
   useEffect(() => { setQ(value?.nama || ""); }, [value]);
   useEffect(() => {
-    if (!open || q.trim().length < 3 || q === value?.nama) { setHits([]); return; }
+    if (!open || q.trim().length < 2 || q === value?.nama) { setHits([]); return; }
     const ac = new AbortController();
     const local = CITIES.filter((c) => c[0].toLowerCase().includes(q.trim().toLowerCase())).slice(0, 3).map((c) => ({ nama: c[0], detail: c[3], lon: c[5], lat: c[4] }));
     setHits(local);
@@ -100,6 +101,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const [done, setDone] = useState({});
   const [atStop, setAtStop] = useState(false);
   const [rerouting, setRerouting] = useState(false);
+  const [showFrom, setShowFrom] = useState(false);
   const [free, setFree] = useState(null);        // mode jalan tanpa tujuan: { simulate }
   const [target, setTarget] = useState(null);    // masjid tujuan kalau berangkat dari mode tanpa tujuan
 
@@ -147,11 +149,11 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     }
   }, [loadPois, mode, avoidToll]);
 
-  const preview = async () => {
-    if (!dest) { setErr("Pilih tujuan dulu dari daftar yang muncul."); return; }
+  const preview = async (d = dest) => {
+    if (!d) { setErr("Pilih tujuan dulu dari daftar yang muncul."); return; }
     const from = origin ? [origin.lon, origin.lat] : gps;
     if (!from) { setErr("Lokasi lu belum kebaca. Izinkan akses lokasi, atau isi kolom Dari buat simulasi."); return; }
-    const rt = await plan(from, dest, null);
+    const rt = await plan(from, d, null);
     if (rt) { setStop(null); setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); setNow(Date.now()); setPhase("preview"); }
   };
 
@@ -344,6 +346,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     return (
       <Home gps={gps} onFree={() => { setErr(""); setFree({ simulate: false }); }} onSim={() => setFree({ simulate: true })} onPlan={onPlan}
         footnote={`Rute dari ${ROUTE_PROVIDER}, peta & data masjid dari OpenStreetMap. Jadwal shalat metode Kemenag.`}>
+        <SearchField value={dest} near={gps} onPick={(h) => { setDest(h); setErr(""); if (h) { saveRecent(h); preview(h); } }} />
         <div className="modes" role="group" aria-label="Kendaraan">
           {["mobil", "motor"].map((m) => (
             <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>{m === "mobil" ? <Car /> : <Moto />}{MODES[m]}</button>
@@ -352,11 +355,14 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
         {mode === "mobil"
           ? <label className="check small" htmlFor="notoll"><input id="notoll" type="checkbox" checked={avoidToll} onChange={(e) => toggleToll(e.target.checked)} /><span>Hindari jalan tol</span></label>
           : <p className="note mode-note">Rute motor otomatis lewat jalan biasa, nggak masuk tol.</p>}
-        <PlaceField id="tujuan" label="Mau ke mana?" value={dest} onPick={setDest} placeholder="Cari kota, masjid, alamat" near={gps} />
-        <PlaceField id="asal" label="Dari" value={origin} onPick={setOrigin} placeholder="Lokasi saya (GPS)" near={gps} allowMe />
+        {showFrom || origin ? (
+          <PlaceField id="asal" label="Dari" value={origin} onPick={(o) => { setOrigin(o); if (!o) setShowFrom(false); }} placeholder="Lokasi saya (GPS)" near={gps} allowMe />
+        ) : (
+          <p className="fromline">Dari <b>{gps ? "lokasi lu sekarang" : "lokasi lu (izinkan GPS)"}</b> · <button type="button" className="linkbtn inline" onClick={() => setShowFrom(true)}>Ubah</button></p>
+        )}
         {origin && <p className="note">Titik awal bukan lokasi lu sekarang, jadi perjalanan bakal disimulasikan ({SIM_SPEED}x lebih cepat).</p>}
         {err && <div className="err" role="alert">{err}</div>}
-        <button className="bigbtn" type="button" onClick={preview} disabled={phase === "routing"}>{phase === "routing" ? "Menghitung rute…" : "Lihat rute"}</button>
+        <button className="bigbtn" type="button" onClick={() => preview()} disabled={phase === "routing"}>{phase === "routing" ? "Menghitung rute…" : "Lihat rute"}</button>
       </Home>
     );
   }
