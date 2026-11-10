@@ -5,6 +5,7 @@ import { jam, timesAt, nextPrayer, currentEnds, prayerNow, SHALAT } from "../lib
 import { hav, bearing } from "../lib/geo";
 import { snapToLines, coordAt, nearCity, LINES } from "../lib/route";
 import { fetchPois, fmtDist, sayDist, fmtDur } from "../lib/nav";
+import { speak as voiceSpeak, stop as voiceStop } from "../lib/voice";
 
 // Mode "Jalan tanpa tujuan": cukup GPS. Jadwal shalat dari posisi, masjid & rest area asli di depan.
 const SIM_SPEED = (typeof window !== "undefined" && Number(new URLSearchParams(window.location.search).get("simx"))) || 10;
@@ -29,12 +30,9 @@ function isLeft(here, brg, p) {
   return d > 180;
 }
 
-function speak(text, muted) {
-  if (muted || !("speechSynthesis" in window)) return;
-  try { const u = new SpeechSynthesisUtterance(text); u.lang = "id-ID"; const v = speechSynthesis.getVoices().find((x) => x.lang?.toLowerCase().startsWith("id")); if (v) u.voice = v; speechSynthesis.speak(u); } catch {}
-}
+function speak(text, muted) { voiceSpeak(text, { muted }); }
 
-export default function FreeDrive({ simulate, reports, onReport, canReport, setLiveFix, onGo, onSetDest, onExit }) {
+export default function FreeDrive({ simulate, mode = "mobil", reports, onReport, canReport, setLiveFix, onGo, onSetDest, onExit }) {
   const [fix, setFix] = useState(null);
   const [hdg, setHdg] = useState(null);
   const [speed, setSpeed] = useState(null);
@@ -108,7 +106,8 @@ export default function FreeDrive({ simulate, reports, onReport, canReport, setL
   }, [fix, hdg]);
 
   const snap = fix ? snapToLines(fix.lat, fix.lon) : null;
-  const onToll = tollOverride ?? !!(snap && snap.distKm < 3);
+  // motor nggak boleh masuk tol, jadi anggap selalu di jalan biasa (kecuali diubah manual)
+  const onToll = tollOverride ?? (mode !== "motor" && !!(snap && snap.distKm < 3));
   const v = speed && speed > 8 ? speed : onToll ? 22 : 15; // m/s
 
   const ahead = useMemo(() => {
@@ -190,7 +189,7 @@ export default function FreeDrive({ simulate, reports, onReport, canReport, setL
       )}
       </div>
       <div className="navbtns">
-        <button type="button" onClick={() => { if (!muted) try { speechSynthesis.cancel(); } catch {} setMuted(!muted); }} aria-label={muted ? "Nyalakan suara" : "Matikan suara"} aria-pressed={muted}>
+        <button type="button" onClick={() => { if (!muted) voiceStop(); setMuted(!muted); }} aria-label={muted ? "Nyalakan suara" : "Matikan suara"} aria-pressed={muted}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" />{muted ? <path d="M17 9l5 6m0-6l-5 6" /> : <path d="M17 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12" />}</svg>
         </button>
         {!follow && <button type="button" className="wide" onClick={() => setFollow(true)}>Ikuti</button>}
