@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import NavMap from "./NavMap";
 import FreeDrive from "./FreeDrive";
+import Home from "./Home";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
 import { jam, nextPrayer, currentEnds, SHALAT } from "../lib/prayer";
@@ -81,7 +82,7 @@ function PlaceField({ id, label, value, onPick, placeholder, near, allowMe }) {
   );
 }
 
-export default function NavView({ reports, onReport, canReport, setLiveFix }) {
+export default function NavView({ reports, onReport, canReport, setLiveFix, onPlan }) {
   const [phase, setPhase] = useState("setup"); // setup | routing | preview | nav | arrived
   const [dest, setDest] = useState(null);
   const [origin, setOrigin] = useState(null); // null = GPS
@@ -341,19 +342,14 @@ export default function NavView({ reports, onReport, canReport, setLiveFix }) {
 
   if (!showMap) {
     return (
-      <div className="wrap navsetup">
-        <h2>Mau jalan ke mana hari ini?</h2>
-        <p className="note">Rute jalan asli, petunjuk belokan bersuara, plus masjid yang keburu disinggahi tiap masuk waktu shalat.</p>
+      <Home gps={gps} onFree={() => { setErr(""); setFree({ simulate: false }); }} onSim={() => setFree({ simulate: true })} onPlan={onPlan}
+        footnote={`Rute dari ${ROUTE_PROVIDER}, peta & data masjid dari OpenStreetMap. Jadwal shalat metode Kemenag.`}>
         <PlaceField id="tujuan" label="Mau ke mana?" value={dest} onPick={setDest} placeholder="Cari kota, masjid, alamat" near={gps} />
         <PlaceField id="asal" label="Dari" value={origin} onPick={setOrigin} placeholder="Lokasi saya (GPS)" near={gps} allowMe />
         {origin && <p className="note">Titik awal bukan lokasi lu sekarang, jadi perjalanan bakal disimulasikan ({SIM_SPEED}x lebih cepat).</p>}
         {err && <div className="err" role="alert">{err}</div>}
         <button className="bigbtn" type="button" onClick={preview} disabled={phase === "routing"}>{phase === "routing" ? "Menghitung rute…" : "Lihat rute"}</button>
-        <div className="orline"><span>atau</span></div>
-        <button className="ghost" type="button" onClick={() => { setErr(""); setFree({ simulate: false }); }}>Jalan tanpa tujuan</button>
-        <p className="note">Nggak perlu isi tujuan. Langsung jalan, nanti muncul jadwal shalat dari posisi lu plus masjid dan rest area di depan. <button className="linkbtn inline" type="button" onClick={() => setFree({ simulate: true })}>Coba simulasinya</button></p>
-        <p className="note">Rute dari {ROUTE_PROVIDER}, peta &amp; data masjid dari OpenStreetMap. Jadwal shalat metode Kemenag.</p>
-      </div>
+      </Home>
     );
   }
 
