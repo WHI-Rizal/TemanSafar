@@ -1,4 +1,4 @@
-/* Jejak Musafir: papan rambu tol hijau, aksen kuning, satu kolom sempit buat satu tangan */
+/* Teman Safar: papan rambu tol hijau, aksen kuning keemasan, motif bintang delapan tipis, satu kolom buat satu tangan */
 :root {
   --bg: #f3f5f1; --surface: #ffffff; --ink: #15211b; --muted: #5d6b63; --line: #d8ded7;
   --sign: #0d6b45; --sign-ink: #ffffff; --accent: #e8b21c; --accent-ink: #1b1503;
@@ -245,3 +245,60 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .topstack > * { pointer-events: auto; }
 .topstack .banner { position: static; width: 100%; }
 .topstack .pchip-nav { position: static; transform: none; }
+
+/* ===== Teman Safar: header & halaman depan ===== */
+:root {
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.07' stroke-width='1.2'%3E%3Crect x='17' y='17' width='22' height='22'/%3E%3Crect x='17' y='17' width='22' height='22' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
+  --sign-deep: #0a5236;
+}
+@media (prefers-color-scheme: dark) { :root { --sign-deep: #0e3d2a; } }
+.top { background-color: var(--sign); background-image: var(--pattern); }
+.top .wrap { padding-block: 14px 0; gap: 12px; }
+.brand { align-items: center; justify-content: flex-start; gap: 10px; }
+.brand .logo { flex: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,.2)); }
+.brand > div { display: flex; flex-direction: column; gap: 2px; }
+.brand h1 { font-size: 1.45rem; letter-spacing: .01em; }
+.brand span { text-transform: none; letter-spacing: 0; font-family: var(--body); font-weight: 400; font-size: .82rem; opacity: .85; }
+.tabs { background: rgba(0,0,0,.18); border-radius: 12px; padding: 4px; gap: 4px; margin-bottom: 12px; }
+.tabs button { border: 0; border-radius: 9px; padding: 9px 4px; opacity: .85; }
+.tabs button[aria-selected="true"] { background: var(--sign-ink); color: var(--sign); opacity: 1; border-bottom: 0; }
+
+.home .hero { background: linear-gradient(180deg, var(--sign) 0%, var(--sign-deep) 100%); background-image: var(--pattern), linear-gradient(180deg, var(--sign) 0%, var(--sign-deep) 100%); color: var(--sign-ink); padding-bottom: 46px; border-radius: 0 0 28px 28px; }
+.hero-in { display: flex; flex-direction: column; gap: 6px; padding-block: 8px 0; }
+.hello { margin: 0; font-size: .95rem; opacity: .85; }
+.hero h2 { font-family: var(--display); font-weight: 900; font-size: 1.75rem; line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
+.pcard { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(2px); }
+.pcard-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.pcard-top > div { display: flex; flex-direction: column; }
+.pc-lbl { font-family: var(--display); font-weight: 800; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; opacity: .75; }
+.pc-name { font-family: var(--display); font-weight: 900; font-size: 2.1rem; line-height: 1; color: var(--accent); }
+.pc-time { font-family: var(--display); font-weight: 800; font-size: 1.05rem; font-variant-numeric: tabular-nums; opacity: .9; }
+.pc-right { text-align: right; align-items: flex-end; }
+.pc-cd { font-family: var(--display); font-weight: 900; font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.pc-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.pc-row div { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 2px; border-radius: 10px; background: rgba(0,0,0,.15); font-size: .72rem; }
+.pc-row b { font-family: var(--display); font-size: .95rem; font-variant-numeric: tabular-nums; }
+.pc-row div.on { background: var(--accent); color: var(--accent-ink); }
+.pc-where { margin: 0; font-size: .74rem; opacity: .72; }
+
+.home-body { display: flex; flex-direction: column; gap: 14px; padding-bottom: 40px; }
+.searchcard { margin-top: -30px; background: var(--surface); border-radius: 18px; box-shadow: 0 10px 30px rgba(10,40,25,.16); padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 2; }
+.searchcard .pf input { background: var(--bg); border-color: transparent; }
+.searchcard .pf input:focus { border-color: var(--sign); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--sign) 20%, transparent); }
+.home-h { font-family: var(--display); font-weight: 800; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 8px 0 -4px; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; color: var(--ink); transition: transform .15s ease, box-shadow .15s ease; }
+.tile:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(10,40,25,.1); }
+.tile-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--sign) 12%, var(--surface)); color: var(--sign); margin-bottom: 2px; }
+.tile:nth-child(2) .tile-ic { background: color-mix(in srgb, var(--accent) 22%, var(--surface)); color: color-mix(in srgb, var(--accent) 55%, var(--ink)); }
+.tile b { font-family: var(--display); font-weight: 800; font-size: 1rem; line-height: 1.2; }
+.tile span:last-child { font-size: .82rem; color: var(--muted); line-height: 1.35; }
+.why { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.why li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; }
+.why li + li { border-top: 1px solid var(--line); }
+.why li > span { flex: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--chip); color: var(--sign); }
+.why li div { display: flex; flex-direction: column; gap: 2px; }
+.why small { color: var(--muted); font-size: .84rem; line-height: 1.35; }
+.credit { text-align: center; }
+@media (max-width: 360px) { .tiles { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
