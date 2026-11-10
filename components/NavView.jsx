@@ -133,11 +133,11 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   }, []);
 
   // ---------- hitung rute ----------
-  const plan = useCallback(async (from, to, via, failPhase = "setup") => {
+  const plan = useCallback(async (from, to, via, failPhase = "setup", opts = null) => {
     setErr(""); setPhase("routing");
     try {
       const pts = [from, ...(via ? [[via.lon, via.lat]] : []), [to.lon, to.lat]];
-      const rt = await fetchRoute(pts, routeOpts);
+      const rt = await fetchRoute(pts, opts || routeOpts);
       setRoute(rt); routeRef.current = rt; seg.current = 1;
       setPois(placePois(rt, [...poiCache.current.values()]));
       loadPois(rt, 0);
@@ -273,6 +273,35 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       speak(`Singgah di ${p.nama} ditambahkan`, muted);
     }
   };
+  // ganti kendaraan / hindari tol langsung dari layar rute, tanpa balik ke halaman depan
+  const switchVehicle = async (m, toll = avoidToll) => {
+    if (!route || (m === route.mode && (m === "motor" || toll === !!route.avoidToll))) return;
+    setMode(m); if (m === "mobil") toggleToll(toll);
+    const opts = { mode: m, avoidToll: m === "motor" || toll };
+    const back = phase === "nav" ? "nav" : "preview";
+    const here = phase === "nav" && state?.point ? state.point : route.line.coords[0];
+    const destPt = dest ? { lon: dest.lon, lat: dest.lat } : { lon: route.line.coords.at(-1)[0], lat: route.line.coords.at(-1)[1] };
+    const keepSim = sim;
+    const rt = await plan(here, destPt, stop && !atStop ? stop : null, back, opts);
+    if (!rt) return;
+    seg.current = 1; started.current = null; said.current = new Set();
+    if (back === "preview") { setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); setNow(Date.now()); }
+    else { if (keepSim) setSim({ realStart: Date.now(), simStart: clock() }); speak(`Rute ${m === "motor" ? "motor" : opts.avoidToll ? "mobil tanpa tol" : "mobil"} dipakai`, muted); }
+    setPhase(back);
+  };
+  const VehicleSwitch = ({ compact }) => (
+    <div className={`vswitch ${compact ? "compact" : ""}`}>
+      <div className="modes" role="group" aria-label="Kendaraan">
+        {["mobil", "motor"].map((m) => (
+          <button key={m} type="button" aria-pressed={(route?.mode || mode) === m} onClick={() => switchVehicle(m)}>{m === "mobil" ? <Car /> : <Moto />}{MODES[m]}</button>
+        ))}
+      </div>
+      {(route?.mode || mode) === "mobil"
+        ? <label className="check small" htmlFor={compact ? "notoll-n" : "notoll-p"}><input id={compact ? "notoll-n" : "notoll-p"} type="checkbox" checked={!!route?.avoidToll} onChange={(e) => switchVehicle("mobil", e.target.checked)} /><span>Hindari tol</span></label>
+        : <span className="note">Lewat jalan biasa, tanpa tol</span>}
+    </div>
+  );
+
   const resume = async () => {
     const destPt = route.line.coords[route.line.coords.length - 1], here = state?.point;
     const keepSim = sim;
@@ -404,8 +433,8 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
             <>
               <div className="eta-row">
                 <div><b className="eta-big">{fmtDur(route.duration)}</b><span>{fmtDist(route.distance)} · tiba ± {jam(Date.now() + route.duration * 1000)}</span></div>
-                <span className="modechip">{route.mode === "motor" ? <Moto /> : <Car />}{MODES[route.mode || "mobil"]}{route.mode !== "motor" && route.avoidToll ? " · tanpa tol" : ""}</span>
               </div>
+              <VehicleSwitch />
               <PrayerPlan sel={sel} along={0} onStop={goStop} stop={stop} />
               <div className="row2">
                 <button className="ghost" type="button" onClick={end}>Kembali</button>
@@ -435,6 +464,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
               {curActive && <button className="linkbtn" type="button" onClick={() => markDone(cur.nama)}>Udah shalat {cur.nama}</button>}
               <button className="linkbtn" type="button" onClick={() => setSheet(sheet === "list" ? false : "list")}>{sheet === "list" ? "Tutup daftar" : `Masjid & rest area di depan (${(sel?.ahead || []).length})`}</button>
               {sheet === "list" && <AheadList list={aheadList} reports={reports} onStop={goStop} onReport={onReport} canReport={canReport} />}
+              <VehicleSwitch compact />
               {err && <p className="note">{err}</p>}
             </>
           )}
