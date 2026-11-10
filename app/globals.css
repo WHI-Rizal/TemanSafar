@@ -360,3 +360,9 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 @media (min-width: 700px) { .home-body { padding-bottom: 40px; } }
 .sf-list .sf-more { border-top: 1px dashed var(--line); border-radius: 0 0 10px 10px; margin-top: 4px; }
 .sf-list .sf-more b { color: var(--sign); }
+.vswitch { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.vswitch .modes { flex: 1 1 220px; }
+.vswitch .modes button { min-height: 40px; font-size: .92rem; }
+.vswitch .check.small { margin: 0; white-space: nowrap; }
+.vswitch .note { margin: 0; font-size: .82rem; }
+.vswitch.compact { border-top: 1px solid var(--line); padding-top: 10px; }
