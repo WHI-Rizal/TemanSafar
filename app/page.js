@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 const App = dynamic(() => import("../components/App"), {
   ssr: false,
   loading: () => (
-    <div style={{ padding: "40px 16px", textAlign: "center", color: "#5d6b63" }}>Memuat Jejak Musafir…</div>
+    <div style={{ padding: "40px 16px", textAlign: "center", color: "#5d6b63" }}>Memuat Teman Safar…</div>
   ),
 });
 
