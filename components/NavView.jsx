@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import NavMap from "./NavMap";
 import FreeDrive from "./FreeDrive";
 import Home from "./Home";
+import { speak as voiceSpeak, stop as voiceStop } from "../lib/voice";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
 import { jam, nextPrayer, currentEnds, SHALAT } from "../lib/prayer";
 import { project, pointAt, headingAt, sample, hav } from "../lib/geo";
 import {
   geocode, fetchRoute, fetchPois, placePois, pickStops, stepIndexAt, durAt, etaAt,
-  instr, iconKey, fmtDist, sayDist, fmtDur, roadName, ROUTE_PROVIDER,
+  instr, iconKey, fmtDist, sayDist, fmtDur, roadName, ROUTE_PROVIDER, MODES,
 } from "../lib/nav";
 
 // simulasi: 10x lebih cepat (bisa diubah buat tes pakai ?simx=60)
@@ -32,16 +33,10 @@ const Turn = ({ k, size = 44 }) => <svg viewBox="0 0 24 24" width={size} height=
 const todayKey = (ms) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10);
 const poiStop = (p) => ({ id: p.id, nama: p.nama, ruasNama: KIND[p.kind] + (p.inRest ? ` · di ${p.inRest}` : ""), lat: p.lat, lon: p.lon, approx: false });
 
-function speak(text, muted) {
-  if (muted || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  try {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "id-ID"; u.rate = 1;
-    const v = window.speechSynthesis.getVoices().find((x) => x.lang?.toLowerCase().startsWith("id"));
-    if (v) u.voice = v;
-    window.speechSynthesis.speak(u);
-  } catch {}
-}
+function speak(text, muted, urgent = false) { voiceSpeak(text, { muted, urgent }); }
+
+const Car = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5z" /><path d="M5 12h14" /><circle cx="8" cy="17" r="1.6" /><circle cx="16" cy="17" r="1.6" /></svg>;
+const Moto = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5.5" cy="16.5" r="3" /><circle cx="18.5" cy="16.5" r="3" /><path d="M5.5 16.5 9 10h5l4.5 6.5M14 10l-1.5-3H10M9 10l3 6.5h-2" /></svg>;
 
 // ---------- kolom cari tempat ----------
 function PlaceField({ id, label, value, onPick, placeholder, near, allowMe }) {
@@ -85,6 +80,11 @@ function PlaceField({ id, label, value, onPick, placeholder, near, allowMe }) {
 export default function NavView({ reports, onReport, canReport, setLiveFix, onPlan }) {
   const [phase, setPhase] = useState("setup"); // setup | routing | preview | nav | arrived
   const [dest, setDest] = useState(null);
+  const [mode, setModeState] = useState(() => { try { return localStorage.getItem("ts-mode") === "motor" ? "motor" : "mobil"; } catch { return "mobil"; } });
+  const [avoidToll, setAvoidToll] = useState(() => { try { return localStorage.getItem("ts-notoll") === "1"; } catch { return false; } });
+  const setMode = (m) => { setModeState(m); try { localStorage.setItem("ts-mode", m); } catch {} };
+  const toggleToll = (v) => { setAvoidToll(v); try { localStorage.setItem("ts-notoll", v ? "1" : "0"); } catch {} };
+  const routeOpts = { mode, avoidToll: mode === "motor" || avoidToll };
   const [origin, setOrigin] = useState(null); // null = GPS
   const [gps, setGps] = useState(null);
   const [route, setRoute] = useState(null);
@@ -135,7 +135,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     setErr(""); setPhase("routing");
     try {
       const pts = [from, ...(via ? [[via.lon, via.lat]] : []), [to.lon, to.lat]];
-      const rt = await fetchRoute(pts);
+      const rt = await fetchRoute(pts, routeOpts);
       setRoute(rt); routeRef.current = rt; seg.current = 1;
       setPois(placePois(rt, [...poiCache.current.values()]));
       loadPois(rt, 0);
@@ -145,7 +145,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       setPhase(failPhase);
       return null;
     }
-  }, [loadPois]);
+  }, [loadPois, mode, avoidToll]);
 
   const preview = async () => {
     if (!dest) { setErr("Pilih tujuan dulu dari daftar yang muncul."); return; }
@@ -177,7 +177,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       speak("Rute dihitung ulang", muted);
       setRerouting(true);
       const destPt = rt.line.coords[rt.line.coords.length - 1];
-      fetchRoute([p, ...(stop && !atStop ? [[stop.lon, stop.lat]] : []), destPt]).then((nr) => {
+      fetchRoute([p, ...(stop && !atStop ? [[stop.lon, stop.lat]] : []), destPt], routeOpts).then((nr) => {
         setRoute(nr); routeRef.current = nr; seg.current = 1; started.current = null;
         setPois(placePois(nr, [...poiCache.current.values()])); loadPois(nr, 0);
       }).catch(() => {}).finally(() => setRerouting(false));
@@ -194,7 +194,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     const wp = rt.steps.find((s) => s.waypoint);
     if (wp && !atStop && along >= wp.along - 50 && along < wp.along + 600) { setAtStop(true); speak(`Sampai di ${stop?.nama || "tempat singgah"}`, muted); }
     if (remain < 40) { setPhase("arrived"); speak("Sampai di tujuan. Alhamdulillah.", muted); }
-  }, [loadPois, muted, setLiveFix, stop, atStop]);
+  }, [loadPois, muted, setLiveFix, stop, atStop, mode, avoidToll]);
 
   // ---------- mulai / berhenti ----------
   const keepAwake = async () => { try { if ("wakeLock" in navigator) wake.current = await navigator.wakeLock.request("screen"); } catch {} };
@@ -223,7 +223,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     if (watch.current != null) navigator.geolocation.clearWatch(watch.current);
     watch.current = null; setSim(null);
     try { wake.current?.release(); } catch {}
-    try { window.speechSynthesis?.cancel(); } catch {}
+    voiceStop();
     setPhase("setup"); setRoute(null); setStop(null); setAtStop(false); setPois([]); setState(null); setTarget(null);
   };
 
@@ -309,7 +309,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       const key = `${route.distance.toFixed(0)}-${si + 1}-${d}`;
       if (toNext <= d && toNext > d * 0.4 - 10 && !said.current.has(key)) {
         said.current.add(key);
-        speak(d <= 80 ? instr(next) : `Dalam ${sayDist(toNext)}, ${instr(next).toLowerCase()}`, muted);
+        speak(d <= 80 ? instr(next) : `Dalam ${sayDist(toNext)}, ${instr(next).toLowerCase()}`, muted, true);
         break;
       }
     }
@@ -336,7 +336,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const aheadList = (sel?.ahead || []).slice(0, 8);
 
   if (free) {
-    return <FreeDrive simulate={free.simulate} reports={reports} onReport={onReport} canReport={canReport} setLiveFix={setLiveFix}
+    return <FreeDrive simulate={free.simulate} mode={mode} reports={reports} onReport={onReport} canReport={canReport} setLiveFix={setLiveFix}
       onGo={startTo} onSetDest={() => setFree(null)} onExit={() => setFree(null)} />;
   }
 
@@ -344,6 +344,14 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     return (
       <Home gps={gps} onFree={() => { setErr(""); setFree({ simulate: false }); }} onSim={() => setFree({ simulate: true })} onPlan={onPlan}
         footnote={`Rute dari ${ROUTE_PROVIDER}, peta & data masjid dari OpenStreetMap. Jadwal shalat metode Kemenag.`}>
+        <div className="modes" role="group" aria-label="Kendaraan">
+          {["mobil", "motor"].map((m) => (
+            <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>{m === "mobil" ? <Car /> : <Moto />}{MODES[m]}</button>
+          ))}
+        </div>
+        {mode === "mobil"
+          ? <label className="check small" htmlFor="notoll"><input id="notoll" type="checkbox" checked={avoidToll} onChange={(e) => toggleToll(e.target.checked)} /><span>Hindari jalan tol</span></label>
+          : <p className="note mode-note">Rute motor otomatis lewat jalan biasa, nggak masuk tol.</p>}
         <PlaceField id="tujuan" label="Mau ke mana?" value={dest} onPick={setDest} placeholder="Cari kota, masjid, alamat" near={gps} />
         <PlaceField id="asal" label="Dari" value={origin} onPick={setOrigin} placeholder="Lokasi saya (GPS)" near={gps} allowMe />
         {origin && <p className="note">Titik awal bukan lokasi lu sekarang, jadi perjalanan bakal disimulasikan ({SIM_SPEED}x lebih cepat).</p>}
@@ -377,7 +385,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       </div>
       {phase === "nav" && (
         <div className="navbtns">
-          <button type="button" onClick={() => { if (!muted) try { window.speechSynthesis?.cancel(); } catch {} setMuted(!muted); }} aria-label={muted ? "Nyalakan suara" : "Matikan suara"} aria-pressed={muted}>
+          <button type="button" onClick={() => { if (!muted) voiceStop(); setMuted(!muted); }} aria-label={muted ? "Nyalakan suara" : "Matikan suara"} aria-pressed={muted}>
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" />{muted ? <path d="M17 9l5 6m0-6l-5 6" /> : <path d="M17 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12" />}</svg>
           </button>
           {!follow && <button type="button" className="wide" onClick={() => setFollow(true)}>Ikuti</button>}
@@ -390,6 +398,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
             <>
               <div className="eta-row">
                 <div><b className="eta-big">{fmtDur(route.duration)}</b><span>{fmtDist(route.distance)} · tiba ± {jam(Date.now() + route.duration * 1000)}</span></div>
+                <span className="modechip">{route.mode === "motor" ? <Moto /> : <Car />}{MODES[route.mode || "mobil"]}{route.mode !== "motor" && route.avoidToll ? " · tanpa tol" : ""}</span>
               </div>
               <PrayerPlan sel={sel} along={0} onStop={goStop} stop={stop} />
               <div className="row2">
