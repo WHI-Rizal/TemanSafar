@@ -2,10 +2,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 
 export const metadata = {
-  title: "Jejak Musafir",
-  description: "Rest area, masjid, dan waktu shalat di sepanjang perjalanan tol. Kondisi toilet, mukena, dan parkir dari laporan sesama musafir.",
+  title: "Teman Safar",
+  description: "Teman shalat di perjalanan: navigasi, jadwal shalat real time, dan masjid yang keburu disinggahi. Kondisi toilet, mukena, dan parkir dari laporan sesama musafir.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Jejak Musafir", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Teman Safar", statusBarStyle: "default" },
   icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
 };
 
