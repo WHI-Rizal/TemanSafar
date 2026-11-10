@@ -302,3 +302,11 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .credit { text-align: center; }
 @media (max-width: 360px) { .tiles { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
+.hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 4px; }
+.hero-top .hello { line-height: 1.35; }
+.clock { text-align: right; flex: none; }
+.clock-time { display: flex; align-items: baseline; justify-content: flex-end; gap: 3px; font-family: var(--display); font-variant-numeric: tabular-nums; }
+.clock-time b { font-weight: 900; font-size: 1.9rem; line-height: 1; letter-spacing: .01em; }
+.clock-sec { font-weight: 800; font-size: .95rem; opacity: .7; min-width: 1.3em; text-align: left; }
+.clock-tz { font-weight: 800; font-size: .68rem; letter-spacing: .08em; opacity: .7; margin-left: 2px; }
+.clock-date { font-size: .74rem; opacity: .8; line-height: 1.35; margin-top: 3px; }
