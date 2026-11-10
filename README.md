@@ -1,4 +1,4 @@
-# Jejak Musafir
+# Teman Safar
 
 Web app (PWA) buat musafir: rest area tol, waktu shalat real time dari GPS, dan laporan kondisi toilet, mukena, parkir dari sesama musafir.
 
@@ -83,4 +83,3 @@ data/           daftar rest area
 public/sw.js    service worker offline
 firestore.rules aturan keamanan database
 ```
-
