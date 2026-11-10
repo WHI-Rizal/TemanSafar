@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
-const UA = "JejakMusafir/0.5 (+https://temansafar.vercel.app)";
+const UA = "TemanSafar/0.5 (+https://temansafar.vercel.app)";
 
 export async function GET(req) {
   const b = tileBox(new URL(req.url).searchParams.get("t") || "");
