@@ -24,9 +24,30 @@ const Ic = {
   people: <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" /><path d="M16 4a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.6" /></svg>,
 };
 
+// Jam berjalan (WIB) + tanggal Masehi & Hijriah. Dipisah biar detiknya nggak bikin seluruh halaman render ulang.
+function Clock() {
+  const [t, setT] = useState(Date.now());
+  useEffect(() => { const id = setInterval(() => setT(Date.now()), 1000); return () => clearInterval(id); }, []);
+  const d = new Date(t);
+  const hm = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false }).format(d).replace(":", ".");
+  const sec = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", second: "2-digit" }).format(d).padStart(2, "0");
+  const masehi = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(d);
+  let hijri = "";
+  try {
+    hijri = new Intl.DateTimeFormat("id-ID-u-ca-islamic-umalqura", { timeZone: "Asia/Jakarta", day: "numeric", month: "long", year: "numeric" }).format(d)
+      .replace(/\s*(SH|H|AH)\.?$/i, "") + " H";
+  } catch {}
+  return (
+    <div className="clock" aria-label={`Sekarang pukul ${hm} WIB`}>
+      <div className="clock-time"><b>{hm}</b><span className="clock-sec">{sec}</span><span className="clock-tz">WIB</span></div>
+      <div className="clock-date">{masehi}{hijri && <><br />{hijri}</>}</div>
+    </div>
+  );
+}
+
 export default function Home({ gps, children, onFree, onSim, onPlan, footnote }) {
   const [now, setNow] = useState(Date.now());
-  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(id); }, []);
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(id); }, []);
 
   const here = gps || FALLBACK;
   const times = timesAt(now, here[1], here[0]);
@@ -40,7 +61,10 @@ export default function Home({ gps, children, onFree, onSim, onPlan, footnote })
     <div className="home">
       <section className="hero">
         <div className="wrap hero-in">
-          <p className="hello">Assalamu'alaikum, {greet(h)}</p>
+          <div className="hero-top">
+            <p className="hello">Assalamu'alaikum,<br />{greet(h)}</p>
+            <Clock />
+          </div>
           <h2>Mau safar ke mana hari ini?</h2>
           <div className="pcard" aria-live="polite">
             <div className="pcard-top">
