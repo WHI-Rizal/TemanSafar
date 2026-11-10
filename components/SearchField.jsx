@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CITIES } from "../lib/route";
-import { geocode, fetchPois, fmtDist } from "../lib/nav";
+import { geocode, searchFull, fetchPois, fmtDist } from "../lib/nav";
 import { hav } from "../lib/geo";
 
 // Kolom tujuan yang gampang: ketik 2 huruf langsung muncul saran, Enter pilih yang teratas,
@@ -36,7 +36,10 @@ export default function SearchField({ value, onPick, near, autoFocus }) {
   const [active, setActive] = useState(0);
   const [nearby, setNearby] = useState([]);
   const [recent, setRecent] = useState([]);
+  const [full, setFull] = useState(null); // hasil pencarian lengkap: null = belum dicari
+  const [fullBusy, setFullBusy] = useState(false);
   const input = useRef(null);
+  const fullFor = useRef("");
 
   useEffect(() => { setQ(value?.nama || ""); }, [value]);
   useEffect(() => { setRecent(loadRecent()); }, [open]);
@@ -57,6 +60,7 @@ export default function SearchField({ value, onPick, near, autoFocus }) {
   // saran pas ngetik: kota bawaan muncul seketika, hasil Photon nyusul
   useEffect(() => {
     const t0 = q.trim();
+    if (fullFor.current !== t0) { setFull(null); }
     if (!open || t0.length < 2 || t0 === value?.nama) { setHits([]); setBusy(false); return; }
     const ac = new AbortController();
     const low = t0.toLowerCase();
@@ -75,16 +79,25 @@ export default function SearchField({ value, onPick, near, autoFocus }) {
     return () => { clearTimeout(t); ac.abort(); };
   }, [q, open, near, value]);
 
+  const runFull = async () => {
+    const t0 = q.trim();
+    if (t0.length < 2) return;
+    fullFor.current = t0; setFullBusy(true); setOpen(true);
+    try { setFull(await searchFull(t0, near)); } catch { setFull([]); }
+    setFullBusy(false);
+  };
   const choose = (h) => { if (!h) return; onPick(h); setQ(h.nama); setOpen(false); input.current?.blur(); };
   const showEmpty = open && q.trim().length < 2;
   const popular = POPULAR.map((n) => CITIES.find((c) => c[0] === n) || (POP_COORD[n] && [n, null, null, "Jawa", POP_COORD[n][1], POP_COORD[n][0]])).filter(Boolean);
   const dist = (h) => (near && h.lat != null ? fmtDist(hav(near, [h.lon, h.lat])) : "");
 
   const onKey = (e) => {
-    if (!hits.length) return;
+    if (e.key === "Enter" && !hits.length && !full?.length) { e.preventDefault(); runFull(); return; }
+    const list = full?.length ? full : hits;
+    if (!list.length) return;
     if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(hits.length - 1, a + 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(0, a - 1)); }
-    else if (e.key === "Enter") { e.preventDefault(); choose(hits[active] || hits[0]); }
+    else if (e.key === "Enter") { e.preventDefault(); choose(list[active] || list[0]); }
   };
 
   const Row = ({ h, i, icon, extra }) => (
@@ -132,9 +145,24 @@ export default function SearchField({ value, onPick, near, autoFocus }) {
             </>
           ) : (
             <>
-              {hits.map((h, i) => <Row key={i} h={h} i={i} extra={dist(h)} />)}
-              {busy && <li className="pf-busy">Mencari…</li>}
-              {!busy && !hits.length && <li className="pf-busy">Nggak ketemu. Coba nama kota atau masjid yang lebih umum.</li>}
+              {full ? (
+                <>
+                  <li className="sf-h">Hasil pencarian lengkap</li>
+                  {full.map((h, i) => <Row key={"f" + i} h={h} i={i} extra={dist(h)} />)}
+                  {!full.length && <li className="pf-busy">Masih nggak ketemu. Coba tambahin nama kecamatan atau kota, misal "Pondok Maharta Tangerang".</li>}
+                </>
+              ) : (
+                <>
+                  {hits.map((h, i) => <Row key={i} h={h} i={i} extra={dist(h)} />)}
+                  {busy && <li className="pf-busy">Mencari…</li>}
+                </>
+              )}
+              {!full && (
+                <li><button type="button" className="sf-more" onMouseDown={(e) => e.preventDefault()} onClick={runFull} disabled={fullBusy}>
+                  <span className="sf-ic">{I.search}</span>
+                  <span className="sf-txt"><b>{fullBusy ? "Mencari lebih lengkap…" : `Cari "${q.trim()}" lebih lengkap`}</b><small>Nama jalan, perumahan, gang, alamat</small></span>
+                </button></li>
+              )}
             </>
           )}
         </ul>
