@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import NavMap from "./NavMap";
+import Sheet, { useMini } from "./Sheet";
 import { merged, ago } from "../lib/data";
 import { jam, timesAt, nextPrayer, currentEnds, prayerNow, SHALAT } from "../lib/prayer";
 import { hav, bearing } from "../lib/geo";
@@ -45,6 +46,9 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
   const [done, setDone] = useState({});
   const [err, setErr] = useState("");
   const [list, setList] = useState(false);
+  const [readMini, writeMini] = useMini();
+  const [mini, setMiniState] = useState(readMini);
+  const setMini = (v) => { setMiniState(v); writeMini(v); };
   const last = useRef(null), lastFetch = useRef(null), said = useRef(new Set()), wake = useRef(null), watch = useRef(null), simRef = useRef(null);
 
   useEffect(() => { try { const d = JSON.parse(localStorage.getItem("jm-done") || "{}"); if (d.day === todayKey(Date.now())) setDone(d.p || {}); } catch {} }, []);
@@ -195,8 +199,15 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
         {!follow && <button type="button" className="wide" onClick={() => setFollow(true)}>Ikuti</button>}
       </div>
 
-      <div className="navsheet">
-        <div className="wrap">
+      <Sheet collapsible mini={mini} onToggle={setMini} summary={
+        <div className="mini-row">
+          <button type="button" className="mini-main" onClick={() => setMini(false)} aria-label="Buka panel info">
+            <b className="eta-big sm">{curActive ? `${cur.nama} · sisa ${fmtDur((cur.ends - now) / 1000)}` : nx ? `${nx.nama} ${jam(nx.ms)}` : "Jalan tanpa tujuan"}</b>
+            <small className="mini-pick">{pick?.p ? `${pick.p.nama} · ± ${fmtDist(pick.p.d)}` : !fix ? "Nyari sinyal GPS…" : "Masjid di depan dicari terus"}</small>
+          </button>
+          <button className="xbtn" type="button" onClick={onExit} aria-label="Selesai">✕</button>
+        </div>
+      }>
           {times && (
             <div className="times" aria-label="Jadwal shalat hari ini di posisi lu">
               {SHALAT.map((p) => <div key={p} className={curP === p ? "on" : ""}>{p}<b>{jam(times[p])}</b></div>)}
@@ -238,8 +249,7 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
             <button className="ghost" type="button" onClick={onExit}>Selesai</button>
             <button className="bigbtn" type="button" onClick={onSetDest}>Pasang tujuan</button>
           </div>
-        </div>
-      </div>
+      </Sheet>
     </div>
   );
 }
