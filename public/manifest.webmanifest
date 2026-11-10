@@ -1,7 +1,7 @@
 {
-  "name": "Jejak Musafir",
-  "short_name": "Jejak Musafir",
-  "description": "Rest area, masjid, dan waktu shalat di sepanjang perjalanan tol.",
+  "name": "Teman Safar",
+  "short_name": "Teman Safar",
+  "description": "Teman shalat di perjalanan: navigasi, jadwal shalat real time, dan masjid yang keburu disinggahi.",
   "lang": "id",
   "start_url": "/",
   "scope": "/",
