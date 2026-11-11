@@ -31,7 +31,7 @@ export default function PlanView({ reports, filters, filterBar, onReport, canRep
   const submit = (e) => {
     e.preventDefault();
     const a = findCity(dari), b = findCity(ke);
-    if (!a || !b) { setErr(`Kota ${!a ? "asal" : "tujuan"} belum ketemu. Pilih dari daftar yang muncul waktu lu ngetik, misal Jakarta, Semarang, atau Bandar Lampung.`); return; }
+    if (!a || !b) { setErr(`Kota ${!a ? "asal" : "tujuan"} belum ketemu. Pilih dari daftar yang muncul waktu kamu ngetik, misal Jakarta, Semarang, atau Bandar Lampung.`); return; }
     if (a === b) { setErr("Kota asal dan tujuan masih sama. Ganti salah satunya ya."); return; }
     const dep = berangkat ? new Date(berangkat).getTime() : Date.now();
     if (!isFinite(dep)) { setErr("Jam berangkat belum kebaca. Isi tanggal dan jamnya ya."); return; }
@@ -96,7 +96,7 @@ export default function PlanView({ reports, filters, filterBar, onReport, canRep
         </form>
       </div>
       <div className="wrap">
-        {!trip && <div className="empty" style={{ marginTop: 14 }}>Isi kota asal, tujuan, dan jam berangkat. Nanti muncul semua rest area yang lu lewati, lengkap sama waktu shalat di jalan.</div>}
+        {!trip && <div className="empty" style={{ marginTop: 14 }}>Isi kota asal, tujuan, dan jam berangkat. Nanti muncul semua rest area yang kamu lewati, lengkap sama waktu shalat di jalan.</div>}
         {plan?.none && <div className="summary"><div className="trip">{trip.a.nama} → {trip.b.nama}</div><div className="facts">Dua kota ini belum tersambung jalan tol di data kami.</div></div>}
         {plan?.near && <div className="summary"><div className="trip">{trip.a.nama} → {trip.b.nama}</div><div className="facts">Jaraknya dekat banget, nggak ada rest area tol di antaranya.</div></div>}
         {plan?.rows && (
@@ -123,7 +123,7 @@ export default function PlanView({ reports, filters, filterBar, onReport, canRep
                   const e = r.e;
                   return (
                     <div key={r.key} className="adzan"><AdzanIcon /><div><b>Masuk {e.nama} ± {jam(e.ms)}</b>
-                      <span>Posisi lu {e.place}. {e.stop ? `Singgah yang pas: ${e.stop.s.nama}, tiba ± ${jam(e.stop.at)}.` : e.ferry ? "Shalat di kapal atau pelabuhan." : "Nggak ada rest area tol lagi sebelum waktunya habis, cari masjid setelah keluar tol."}</span></div></div>
+                      <span>Posisi kamu {e.place}. {e.stop ? `Singgah yang pas: ${e.stop.s.nama}, tiba ± ${jam(e.stop.at)}.` : e.ferry ? "Shalat di kapal atau pelabuhan." : "Nggak ada rest area tol lagi sebelum waktunya habis, cari masjid setelah keluar tol."}</span></div></div>
                   );
                 }
                 const m = merged(r.s, reports);
