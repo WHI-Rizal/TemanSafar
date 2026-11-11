@@ -356,8 +356,9 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .sf-pop button { width: auto; min-height: 36px; padding: 6px 12px; border: 1.5px solid var(--line); border-radius: 999px; font-weight: 700; font-size: .88rem; }
 .fromline { margin: -2px 0 0; font-size: .9rem; color: var(--muted); }
 .fromline b { color: var(--ink); font-weight: 700; }
-.home-body { padding-bottom: 50vh; }
-@media (min-width: 700px) { .home-body { padding-bottom: 40px; } }
+/* ruang ekstra cuma pas daftar saran kebuka, biar kolom tujuan bisa naik di atas keyboard HP */
+.home-body:has(.sf-list) { padding-bottom: 50vh; }
+@media (min-width: 700px) { .home-body:has(.sf-list) { padding-bottom: 40px; } }
 .sf-list .sf-more { border-top: 1px dashed var(--line); border-radius: 0 0 10px 10px; margin-top: 4px; }
 .sf-list .sf-more b { color: var(--sign); }
 .vswitch { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
