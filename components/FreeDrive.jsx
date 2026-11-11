@@ -211,7 +211,7 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
         </div>
       }>
           {times && (
-            <div className="times" aria-label="Jadwal shalat hari ini di posisi lu">
+            <div className="times" aria-label="Jadwal shalat hari ini di posisi kamu">
               {SHALAT.map((p) => <div key={p} className={curP === p ? "on" : ""}>{p}<b>{jam(times[p])}</b></div>)}
             </div>
           )}
