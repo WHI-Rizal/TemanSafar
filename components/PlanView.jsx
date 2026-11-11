@@ -112,7 +112,7 @@ export default function PlanView({ reports, filters, filterBar, onReport, canRep
               {plan.events.length
                 ? <div className="plist">{plan.events.map((e) => <span key={e.nama + e.min} className="pchip">{e.nama} <b>{jam(e.ms)}</b></span>)}</div>
                 : <div className="facts">Nggak ada waktu shalat baru yang masuk selama perjalanan ini.</div>}
-              <div className="note">Jadwal metode Kemenag dari posisi perkiraan, bisa beda 1 sampai 3 menit dari jadwal masjid setempat. Pas di jalan, pakai tab Live biar ngikutin GPS.</div>
+              <div className="note">Jadwal metode Kemenag dari posisi perkiraan, bisa beda 1 sampai 3 menit dari jadwal masjid setempat. Pas di jalan, pakai tab Navigasi biar jadwal dan masjidnya ngikutin posisi kamu.</div>
             </div>
             {filterBar}
             <section className="strip">
