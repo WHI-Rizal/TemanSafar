@@ -453,3 +453,71 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .poi.poi-spbu.pick svg { width: 18px; height: 18px; }
 .ahead .ahead-h { display: block; padding: 14px 0 4px; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 0; }
 .ahead li.is-spbu b { font-weight: 700; font-size: .95rem; }
+
+/* ===== Tab Al-Qur'an ===== */
+.quran { display: flex; flex-direction: column; gap: 14px; padding-block: 16px 40px; }
+.qcont { display: flex; align-items: center; gap: 14px; text-align: left; border: 0; border-radius: 18px; padding: 16px; cursor: pointer; color: #fff; background: linear-gradient(135deg, var(--sign-deep) 0%, var(--sign) 70%); font-family: var(--body); }
+.qcont > span:nth-child(2) { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.qcont small { font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #FFD9B8; }
+.qcont b { font-family: var(--headline); font-weight: 400; font-size: 1.7rem; letter-spacing: .02em; text-transform: uppercase; line-height: 1.1; }
+.qcont span span, .qcont > span:nth-child(2) > span { font-size: .88rem; opacity: .9; }
+.qcont-ic { flex: none; width: 52px; height: 52px; border-radius: 14px; background: rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center; }
+.qcont .chev { font-size: 1.8rem; opacity: .8; }
+.quran .home-h { margin: 6px 0 0; }
+.qpicks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qpicks button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; min-height: 56px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; font-family: var(--body); color: var(--ink); }
+.qpicks button b { font-size: .95rem; }
+.qpicks button small { font-size: .74rem; color: var(--muted); }
+.qmarks { display: flex; flex-wrap: wrap; gap: 6px; }
+.qmarks button { border: 1.5px solid var(--sign); color: var(--sign); background: transparent; border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: .85rem; cursor: pointer; }
+.qseg { margin-top: 6px; }
+.qsearch { width: 100%; min-height: 46px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); padding: 0 14px; font-size: 1rem; }
+.qlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.qlist li + li { border-top: 1px solid var(--line); }
+.qlist button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 2px; border: 0; background: transparent; cursor: pointer; text-align: left; font-family: var(--body); color: var(--ink); }
+.qnum { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--chip); color: var(--sign); font-weight: 800; font-size: .85rem; display: flex; align-items: center; justify-content: center; }
+.qname { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.qname small { color: var(--muted); font-size: .8rem; }
+.qar { flex: none; font-size: 1.25rem; color: var(--sign); font-family: "Amiri", "Scheherazade New", "Noto Naskh Arabic", serif; }
+.reader { padding: 0 0 24px; gap: 0; }
+.qbar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.qbar-in { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding-block: 8px; }
+.qback { border: 0; background: transparent; color: var(--sign); font-weight: 800; font-size: .95rem; padding: 8px 4px; cursor: pointer; }
+.qtitle { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.qtitle b { font-size: 1rem; }
+.qtitle small { color: var(--muted); font-size: .78rem; }
+.qmark { width: 40px; height: 40px; border-radius: 10px; border: 0; background: transparent; color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.qmark.on { color: var(--accent); }
+.qpage { padding-block: 14px; display: flex; justify-content: center; align-items: flex-start; min-height: 60vh; touch-action: pan-y; }
+.mushaf { display: flex; justify-content: center; max-width: 100%; overflow-x: auto; }
+.qnav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+.qnav span { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.qnav .ghost:only-child { grid-column: 1 / -1; }
+.qpage.short { min-height: 0; }
+
+/* tile Al-Qur'an di beranda */
+.tile.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 14px; }
+.tile.wide .tile-txt { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.qhead { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.qhead .qback { padding: 4px 0; }
+.qhead h2 { margin: 0; font-family: var(--headline); font-weight: 400; font-size: 1.7rem; letter-spacing: .02em; text-transform: uppercase; color: var(--ink); }
+/* doa & dzikir */
+.doalist { display: flex; flex-direction: column; gap: 12px; padding-block: 14px 40px; }
+.doa { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.doa header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.doa header b { font-size: .98rem; line-height: 1.3; }
+.doa-n { flex: none; font-size: .72rem; font-weight: 800; color: var(--sign); background: var(--chip); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+.doa-ar { margin: 0; font-family: "Amiri", "Scheherazade New", "Noto Naskh Arabic", serif; font-size: 1.6rem; line-height: 2.1; text-align: right; color: var(--ink); }
+.doa-lt { margin: 0; font-style: italic; color: var(--sign); font-size: .9rem; line-height: 1.5; }
+.doa-tr { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+.doa-src { color: var(--muted); font-size: .75rem; font-weight: 700; }
+/* banner doa safar pas navigasi */
+.doa-air { align-self: center; display: inline-flex; align-items: center; gap: 10px; margin-top: 8px; border: 0; border-radius: 999px; background: var(--sign-deep); color: #fff; padding: 8px 8px 8px 14px; font-family: var(--body); font-weight: 700; font-size: .88rem; box-shadow: 0 4px 12px rgba(0,0,0,.2); cursor: pointer; pointer-events: auto; }
+.doa-skip { background: rgba(255,255,255,.18); border-radius: 999px; padding: 4px 10px; font-size: .8rem; }
+.doa-wave { display: inline-flex; gap: 2px; align-items: flex-end; height: 14px; }
+.doa-wave i { width: 3px; background: #FFD9B8; border-radius: 2px; animation: doaw 1s ease-in-out infinite; }
+.doa-wave i:nth-child(2) { animation-delay: .2s; } .doa-wave i:nth-child(3) { animation-delay: .4s; }
+@keyframes doaw { 0%, 100% { height: 4px; } 50% { height: 14px; } }
+@media (prefers-reduced-motion: reduce) { .doa-wave i { animation: none; height: 10px; } }
+.qerr { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.tile.wide > .tile-txt { color: var(--ink); font-size: 1rem; line-height: 1.2; flex: 1; min-width: 0; }
