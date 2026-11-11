@@ -1,5 +1,5 @@
 // Service worker Teman Safar: simpan halaman, data, dan potongan peta biar tetap kebuka pas sinyal hilang di tol.
-const VERSION = "ts-v4";
+const VERSION = "ts-v5";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {
