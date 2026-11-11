@@ -7,6 +7,7 @@ import Sheet, { useMini } from "./Sheet";
 import WhiCta from "./WhiCta";
 import { shareStory } from "../lib/story";
 import { speak as voiceSpeak, stop as voiceStop, voiceLang } from "../lib/voice";
+import { playDoa, stopDoa, doaPlaying, doaDone } from "../lib/doaSafar";
 const EN = () => voiceLang() === "en";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
@@ -38,7 +39,14 @@ const Turn = ({ k, size = 44 }) => <svg viewBox="0 0 24 24" width={size} height=
 const todayKey = (ms) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10);
 const poiStop = (p) => ({ id: p.id, nama: p.nama, ruasNama: KIND[p.kind] + (p.inRest ? ` · di ${p.inRest}` : ""), lat: p.lat, lon: p.lon, approx: false });
 
-function speak(text, muted, urgent = false) { voiceSpeak(text, { muted, urgent }); }
+// suara pemandu. Kalau doa safar lagi diputar: belokan menghentikan doanya, info lain nunggu doanya selesai.
+function speak(text, muted, urgent = false) {
+  if (doaPlaying()) {
+    if (urgent) stopDoa();
+    else { doaDone().then(() => voiceSpeak(text, { muted })); return; }
+  }
+  voiceSpeak(text, { muted, urgent });
+}
 
 const Car = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5z" /><path d="M5 12h14" /><circle cx="8" cy="17" r="1.6" /><circle cx="16" cy="17" r="1.6" /></svg>;
 const Moto = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5.5" cy="16.5" r="3" /><circle cx="18.5" cy="16.5" r="3" /><path d="M5.5 16.5 9 10h5l4.5 6.5M14 10l-1.5-3H10M9 10l3 6.5h-2" /></svg>;
@@ -82,7 +90,7 @@ function PlaceField({ id, label, value, onPick, placeholder, near, allowMe }) {
   );
 }
 
-export default function NavView({ reports, onReport, canReport, setLiveFix, onPlan }) {
+export default function NavView({ reports, onReport, canReport, setLiveFix, onPlan, onQuran }) {
   const [phase, setPhase] = useState("setup"); // setup | routing | preview | nav | arrived
   const [dest, setDest] = useState(null);
   const [mode, setModeState] = useState(() => { try { return localStorage.getItem("ts-mode") === "motor" ? "motor" : "mobil"; } catch { return "mobil"; } });
@@ -101,6 +109,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const [now, setNow] = useState(Date.now());
   const [follow, setFollow] = useState(true);
   const [muted, setMuted] = useState(false);
+  const [doaAir, setDoaAir] = useState(false); // doa safar lagi diputar
   const [sheet, setSheet] = useState(false);
   const [done, setDone] = useState({});
   const [atStop, setAtStop] = useState(false);
@@ -220,7 +229,13 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     said.current = new Set(); started.current = null; factor.current = 1; off.current = 0;
     keepAwake();
     try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch {}
-    { const L = voiceLang(); speak(instr(rt.steps[0], L) + (rt.steps[1] ? `, ${L === "en" ? "then" : "lalu"} ${instr(rt.steps[1], L).toLowerCase()}` : ""), muted); } // juga membuka izin suara di iOS
+    {
+      const L = voiceLang();
+      const first = instr(rt.steps[0], L) + (rt.steps[1] ? `, ${L === "en" ? "then" : "lalu"} ${instr(rt.steps[1], L).toLowerCase()}` : "");
+      // doa safar dulu (kalau rekamannya ada dan nggak dimatiin), baru arahan pertama
+      if (muted) speak(first, muted);
+      else { voiceSpeak("", { urgent: true }); playDoa(() => setDoaAir(true)).then(() => { setDoaAir(false); speak(first, muted); }); }
+    } // juga membuka izin suara di iOS
     setFollow(true); setSheet(false); setPhase("nav");
     if (!trip.current) trip.current = { from: origin?.nama || "", to: dest?.nama || target?.nama || "Tujuan", km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [] };
     if (simulated) { setSim({ realStart: Date.now(), simStart: Date.now() }); return; }
@@ -236,7 +251,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     if (watch.current != null) navigator.geolocation.clearWatch(watch.current);
     watch.current = null; setSim(null);
     try { wake.current?.release(); } catch {}
-    voiceStop();
+    voiceStop(); stopDoa();
     setPhase("setup"); setRoute(null); setStop(null); setAtStop(false); setPois([]); setState(null); setTarget(null);
     trip.current = null;
   };
@@ -404,7 +419,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
 
   if (!showMap) {
     return (
-      <Home gps={gps} onFree={() => { setErr(""); setFree({ simulate: false }); }} onSim={() => setFree({ simulate: true })} onPlan={onPlan}
+      <Home gps={gps} onFree={() => { setErr(""); setFree({ simulate: false }); }} onSim={() => setFree({ simulate: true })} onPlan={onPlan} onQuran={onQuran}
         footnote={`Rute dari ${ROUTE_PROVIDER}, peta & data masjid dari OpenStreetMap. Jadwal shalat metode Kemenag.`}>
         <SearchField value={dest} near={gps} onPick={(h) => { setDest(h); setErr(""); if (h) { saveRecent(h); preview(h); } }} />
         <div className="modes" role="group" aria-label="Kendaraan">
@@ -448,10 +463,15 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
           {rerouting && " · menghitung ulang rute…"}
         </div>
       )}
+      {phase === "nav" && doaAir && (
+        <button type="button" className="doa-air" onClick={() => stopDoa()}>
+          <span className="doa-wave" aria-hidden="true"><i /><i /><i /></span>Doa safar diputar<span className="doa-skip">Lewati</span>
+        </button>
+      )}
       </div>
       {phase === "nav" && (
         <div className="navbtns">
-          <button type="button" onClick={() => { if (!muted) voiceStop(); setMuted(!muted); }} aria-label={muted ? "Nyalakan suara" : "Matikan suara"} aria-pressed={muted}>
+          <button type="button" onClick={() => { if (!muted) { voiceStop(); stopDoa(); } setMuted(!muted); }} aria-label={muted ? "Nyalakan suara" : "Matikan suara"} aria-pressed={muted}>
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" />{muted ? <path d="M17 9l5 6m0-6l-5 6" /> : <path d="M17 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12" />}</svg>
           </button>
           {!follow && <button type="button" className="wide" onClick={() => setFollow(true)}>Ikuti</button>}
