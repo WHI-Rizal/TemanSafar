@@ -521,3 +521,5 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 @media (prefers-reduced-motion: reduce) { .doa-wave i { animation: none; height: 10px; } }
 .qerr { display: flex; flex-direction: column; gap: 12px; width: 100%; }
 .tile.wide > .tile-txt { color: var(--ink); font-size: 1rem; line-height: 1.2; flex: 1; min-width: 0; }
+.tile.wide .tile-ic { flex: none; margin: 0; }
+.tiles:has(.tile.wide) { grid-template-columns: 1fr; }
