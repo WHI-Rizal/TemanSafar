@@ -446,3 +446,10 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .arrive b { font-family: var(--body); font-weight: 800; }
 .by-whi .whi-logo { width: 18px; height: 18px; border-radius: 50%; background: #fff; object-fit: contain; padding: 1px; flex: none; }
 .promo .pbtns > .pbtn { flex: 1 1 0; min-width: 0; justify-content: center; text-align: center; line-height: 1.2; padding: 6px 10px; }
+/* SPBU sengaja dibikin kalem: cadangan, bukan sorotan utama */
+.poi.poi-spbu { width: 24px; height: 24px; background: #8A7B6A; border-width: 1.5px; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.poi.poi-spbu svg { width: 13px; height: 13px; }
+.poi.poi-spbu.pick { width: 40px; height: 40px; background: var(--accent); }
+.poi.poi-spbu.pick svg { width: 18px; height: 18px; }
+.ahead .ahead-h { display: block; padding: 14px 0 4px; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 0; }
+.ahead li.is-spbu b { font-weight: 700; font-size: .95rem; }
