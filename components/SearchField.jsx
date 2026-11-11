@@ -50,7 +50,7 @@ export default function SearchField({ value, onPick, near, autoFocus }) {
     let off = false;
     fetchPois([near]).then((ps) => {
       if (off) return;
-      const list = ps.filter((p) => p.kind !== "rest").map((p) => ({ nama: p.nama, detail: p.kind === "musala" ? "Musala" : "Masjid", lon: p.lon, lat: p.lat, kind: "masjid", d: hav(near, [p.lon, p.lat]) }))
+      const list = ps.filter((p) => p.kind === "masjid" || p.kind === "musala").map((p) => ({ nama: p.nama, detail: p.kind === "musala" ? "Musala" : "Masjid", lon: p.lon, lat: p.lat, kind: "masjid", d: hav(near, [p.lon, p.lat]) }))
         .sort((a, b) => a.d - b.d).filter((p, i, arr) => arr.findIndex((x) => x.nama === p.nama && Math.abs(x.d - p.d) < 300) === i).slice(0, 4);
       setNearby(list);
     }).catch(() => {});
