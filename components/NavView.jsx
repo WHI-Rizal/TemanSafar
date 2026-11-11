@@ -6,7 +6,8 @@ import SearchField, { saveRecent } from "./SearchField";
 import Sheet, { useMini } from "./Sheet";
 import WhiCta from "./WhiCta";
 import { shareStory } from "../lib/story";
-import { speak as voiceSpeak, stop as voiceStop } from "../lib/voice";
+import { speak as voiceSpeak, stop as voiceStop, voiceLang } from "../lib/voice";
+const EN = () => voiceLang() === "en";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
 import { jam, nextPrayer, currentEnds, prayerNow, SHALAT } from "../lib/prayer";
@@ -185,7 +186,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     if (pr.dist > OFF_ROUTE_M && (f.acc || 0) < 60) off.current++; else off.current = 0;
     if (off.current >= 3 && t - lastReroute.current > 15000 && !f.sim) {
       lastReroute.current = t; off.current = 0;
-      speak("Rute dihitung ulang", muted);
+      speak(EN() ? "Rerouting" : "Rute dihitung ulang", muted);
       setRerouting(true);
       const destPt = rt.line.coords[rt.line.coords.length - 1];
       fetchRoute([p, ...(stop && !atStop ? [[stop.lon, stop.lat]] : []), destPt], routeOpts).then((nr) => {
@@ -203,8 +204,8 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     // sampai?
     const remain = rt.distance - along;
     const wp = rt.steps.find((s) => s.waypoint);
-    if (wp && !atStop && along >= wp.along - 50 && along < wp.along + 600) { setAtStop(true); logStop(stop); speak(`Sampai di ${stop?.nama || "tempat singgah"}`, muted); }
-    if (remain < 40) { setPhase("arrived"); if (target) logStop(target); speak("Sampai di tujuan. Alhamdulillah.", muted); }
+    if (wp && !atStop && along >= wp.along - 50 && along < wp.along + 600) { setAtStop(true); logStop(stop); speak(EN() ? `You have arrived at ${stop?.nama || "your stop"}` : `Sampai di ${stop?.nama || "tempat singgah"}`, muted); }
+    if (remain < 40) { setPhase("arrived"); if (target) logStop(target); speak(EN() ? "You have arrived. Alhamdulillah." : "Sampai di tujuan. Alhamdulillah.", muted); }
   }, [loadPois, muted, setLiveFix, stop, atStop, mode, avoidToll]);
 
   // ---------- mulai / berhenti ----------
@@ -219,7 +220,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     said.current = new Set(); started.current = null; factor.current = 1; off.current = 0;
     keepAwake();
     try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch {}
-    speak(instr(rt.steps[0]) + (rt.steps[1] ? `, lalu ${instr(rt.steps[1]).toLowerCase()}` : ""), muted); // juga membuka izin suara di iOS
+    { const L = voiceLang(); speak(instr(rt.steps[0], L) + (rt.steps[1] ? `, ${L === "en" ? "then" : "lalu"} ${instr(rt.steps[1], L).toLowerCase()}` : ""), muted); } // juga membuka izin suara di iOS
     setFollow(true); setSheet(false); setPhase("nav");
     if (!trip.current) trip.current = { from: origin?.nama || "", to: dest?.nama || target?.nama || "Tujuan", km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [] };
     if (simulated) { setSim({ realStart: Date.now(), simStart: Date.now() }); return; }
@@ -300,7 +301,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       setStop(p); setAtStop(false); seg.current = 1; started.current = null; said.current = new Set();
       if (keepSim) setSim({ realStart: Date.now(), simStart: clock() });
       setPhase(back);
-      speak(`Singgah di ${p.nama} ditambahkan`, muted);
+      speak(EN() ? `Stop at ${p.nama} added` : `Singgah di ${p.nama} ditambahkan`, muted);
     }
   };
   // ganti kendaraan / hindari tol langsung dari layar rute, tanpa balik ke halaman depan
@@ -316,7 +317,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     if (!rt) return;
     seg.current = 1; started.current = null; said.current = new Set();
     if (back === "preview") { setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); setNow(Date.now()); }
-    else { if (keepSim) setSim({ realStart: Date.now(), simStart: clock() }); speak(`Rute ${m === "motor" ? "motor" : opts.avoidToll ? "mobil tanpa tol" : "mobil"} dipakai`, muted); }
+    else { if (keepSim) setSim({ realStart: Date.now(), simStart: clock() }); speak(EN() ? `Switched to ${m === "motor" ? "motorbike" : opts.avoidToll ? "car, no toll" : "car"} route` : `Rute ${m === "motor" ? "motor" : opts.avoidToll ? "mobil tanpa tol" : "mobil"} dipakai`, muted); }
     setPhase(back);
   };
   const VehicleSwitch = ({ compact }) => (
@@ -370,7 +371,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       const key = `${route.distance.toFixed(0)}-${si + 1}-${d}`;
       if (toNext <= d && toNext > d * 0.4 - 10 && !said.current.has(key)) {
         said.current.add(key);
-        speak(d <= 80 ? instr(next) : `Dalam ${sayDist(toNext)}, ${instr(next).toLowerCase()}`, muted, true);
+        { const L = voiceLang(); speak(d <= 80 ? instr(next, L) : L === "en" ? `In ${sayDist(toNext, L)}, ${instr(next, L).toLowerCase()}` : `Dalam ${sayDist(toNext)}, ${instr(next).toLowerCase()}`, muted, true); }
         break;
       }
     }
@@ -381,13 +382,13 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     if (left > 0 && left <= 15 && !said.current.has(key)) {
       said.current.add(key);
       const pk = (sel?.picks || []).find((k) => k.nama === nx.nama && k.poi);
-      const msg = `Waktu ${nx.nama} ${Math.round(left)} menit lagi.` + (pk ? ` ${pk.poi.nama}, ${sayDist(pk.poi.along - along)} di depan.` : "");
+      const msg = EN() ? `${nx.nama} prayer in ${Math.round(left)} minutes.` + (pk ? ` ${pk.poi.nama}, ${sayDist(pk.poi.along - along, "en")} ahead.` : "") : `Waktu ${nx.nama} ${Math.round(left)} menit lagi.` + (pk ? ` ${pk.poi.nama}, ${sayDist(pk.poi.along - along)} di depan.` : "");
       speak(msg, muted);
       try { if (Notification.permission === "granted") navigator.serviceWorker?.getRegistration().then((r) => r?.showNotification(`${nx.nama} ${Math.round(left)} menit lagi`, { body: pk ? `Singgah di ${pk.poi.nama}, ${fmtDist(pk.poi.along - along)} lagi` : "Siapkan tempat berhenti", tag: key, icon: "/icons/icon-192.png" })); } catch {}
     }
     if (mainPick?.poi) {
       const d = mainPick.poi.along - along, k2 = "near-" + mainPick.poi.id;
-      if (d > 0 && d < 2000 && !said.current.has(k2)) { said.current.add(k2); speak(`${mainPick.poi.nama} ${sayDist(d)} lagi${mainPick.poi.side ? " di sebelah " + mainPick.poi.side : ""}, pas buat shalat ${mainPick.nama}.`, muted); }
+      if (d > 0 && d < 2000 && !said.current.has(k2)) { said.current.add(k2); speak(EN() ? `${mainPick.poi.nama} in ${sayDist(d, "en")}${mainPick.poi.side ? " on the " + (mainPick.poi.side === "kiri" ? "left" : "right") : ""}, good for ${mainPick.nama} prayer.` : `${mainPick.poi.nama} ${sayDist(d)} lagi${mainPick.poi.side ? " di sebelah " + mainPick.poi.side : ""}, pas buat shalat ${mainPick.nama}.`, muted); }
     }
   }, [phase, nx, now, sel, mainPick, along, muted]);
 
