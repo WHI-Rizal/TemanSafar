@@ -444,3 +444,4 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .promo .pbtn { text-decoration: none; }
 .arrive b { font-family: var(--body); font-weight: 800; }
 .by-whi .whi-logo { width: 18px; height: 18px; border-radius: 50%; background: #fff; object-fit: contain; padding: 1px; flex: none; }
+.promo .pbtns > .pbtn { flex: 1 1 0; min-width: 0; justify-content: center; text-align: center; line-height: 1.2; padding: 6px 10px; }
