@@ -1,12 +1,12 @@
 // Service worker Teman Safar: simpan halaman, data, dan potongan peta biar tetap kebuka pas sinyal hilang di tol.
-const VERSION = "ts-v5";
+const VERSION = "ts-v6";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION && k !== "jm-tiles").map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION && k !== "jm-tiles" && k !== "ts-quran").map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
 self.addEventListener("fetch", (e) => {
@@ -24,6 +24,17 @@ self.addEventListener("fetch", (e) => {
         if (res.ok) { c.put(req, res.clone()); c.keys().then((ks) => { if (ks.length > 800) c.delete(ks[0]); }); }
         return res;
       } catch { return hit || Response.error(); }
+    }));
+    return;
+  }
+  // Al-Qur'an (versi dikunci, isinya nggak berubah): cache dulu, jadi halaman yang pernah dibuka tetap bisa dibaca tanpa sinyal
+  if (url.hostname === "unpkg.com" && url.pathname.startsWith("/quran-madina-html@")) {
+    e.respondWith(caches.open("ts-quran").then(async (c) => {
+      const hit = await c.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res.ok) c.put(req, res.clone());
+      return res;
     }));
     return;
   }
