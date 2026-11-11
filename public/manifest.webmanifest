@@ -1,17 +1,61 @@
 {
+  "id": "/",
   "name": "Teman Safar",
   "short_name": "Teman Safar",
-  "description": "Teman shalat di perjalanan: navigasi, jadwal shalat real time, dan masjid yang keburu disinggahi.",
+  "description": "Teman shalat di perjalanan: navigasi, jadwal shalat real time, masjid yang keburu disinggahi, Al-Qur'an dan doa safar. Dari Wisata Halal Indonesia.",
   "lang": "id",
-  "start_url": "/",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FFFFFF",
   "theme_color": "#0E8174",
+  "categories": [
+    "travel",
+    "navigation",
+    "lifestyle"
+  ],
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/1-beranda.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Jadwal shalat dan tujuan perjalanan"
+    },
+    {
+      "src": "/screenshots/2-quran.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Al-Qur'an dan bacaan di perjalanan"
+    },
+    {
+      "src": "/screenshots/3-doa.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Doa naik kendaraan dan doa safar"
+    }
   ]
 }
