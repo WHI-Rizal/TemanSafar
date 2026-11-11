@@ -17,7 +17,7 @@ export async function GET(req) {
   if (!b) return Response.json({ error: "bad_tile" }, { status: 400 });
   if (!inIndonesia(b)) return Response.json({ pois: [] }, { headers: { "Cache-Control": "public, s-maxage=2592000" } });
 
-  const { pois, failed, total } = await fetchTile(b, { headers: { "User-Agent": UA, Accept: "application/json" } });
+  const { pois, failed, total } = await fetchTile(b, { headers: { "User-Agent": UA, Accept: "application/json" }, budget: 22000 });
   if (failed === total) return Response.json({ error: "photon_unavailable" }, { status: 502, headers: { "Cache-Control": "no-store" } });
   const partial = failed > 0;
   return Response.json({ pois, partial }, {
