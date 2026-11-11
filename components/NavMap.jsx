@@ -7,6 +7,7 @@ const STYLE = process.env.NEXT_PUBLIC_MAP_STYLE || "https://tiles.openfreemap.or
 const POI_SVG = {
   masjid: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 4c2.5 2 5 3.5 5 7H7c0-3.5 2.5-5 5-7z"/><path d="M6 11h12v9H6z"/></svg>',
   musala: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 5c2 1.6 4 2.8 4 5.5H8C8 7.8 10 6.6 12 5z"/><path d="M7 10.5h10V19H7z"/></svg>',
+  spbu: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M5 20V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v15M4 20h11M7 8h5"/><path d="M14 10h2a1.5 1.5 0 0 1 1.5 1.5V16a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>',
   rest: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 20V4h7a4 4 0 0 1 0 8H6"/></svg>',
 };
 
