@@ -80,7 +80,7 @@ function VoiceSettings() {
             <button type="button" aria-pressed={lang === "en"} onClick={() => update({ lang: "en" })}>English</button>
           </div>
           {ready && !has && (lang === "en"
-            ? <p className="note">Belum ada suara English di HP ini. Pasang lewat pengaturan text-to-speech HP lu.</p>
+            ? <p className="note">Belum ada suara English di HP ini. Pasang lewat pengaturan text-to-speech HP kamu.</p>
             : <p className="note">Pasang suara Bahasa Indonesia biar pemandunya lancar.<br />Android: Setelan, Bahasa & input, Output text-to-speech, Google, pasang Bahasa Indonesia.<br />iPhone: Setelan, Aksesibilitas, Konten Lisan, Suara, Indonesia, unduh Damayanti (Ditingkatkan).</p>)}
           <div className="fld2"><label htmlFor="vrate">Kecepatan bicara · {pref.rate.toFixed(1)}x</label>
             <input id="vrate" type="range" min="0.8" max="1.3" step="0.1" value={pref.rate} onChange={(e) => update({ rate: Number(e.target.value) })} /></div>
@@ -131,7 +131,7 @@ export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, fo
                 <div key={p} className={cur === p ? "on" : ""}><span>{p}</span><b>{jam(times[p])}</b></div>
               ))}
             </div>
-            <p className="pc-where">{gps ? "Dihitung dari lokasi lu sekarang" : "Contoh untuk Jakarta. Izinkan lokasi biar jadwalnya pas"} · metode Kemenag</p>
+            <p className="pc-where">{gps ? "Dihitung dari lokasi kamu sekarang" : "Contoh untuk Jakarta. Izinkan lokasi biar jadwalnya pas"} · metode Kemenag</p>
           </div>
         </div>
       </section>
@@ -154,7 +154,7 @@ export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, fo
           <button type="button" className="tile wide" onClick={onFree}>
             <span className="tile-ic">{Ic.free}</span>
             <span className="tile-txt"><b>Jalan tanpa tujuan</b>
-            <span>Langsung jalan. Jadwal shalat dan masjid di depan ikut posisi lu.</span></span>
+            <span>Langsung jalan. Jadwal shalat dan masjid di depan ikut posisi kamu.</span></span>
           </button>
           <button type="button" className="tile wide" onClick={onPlan}>
             <span className="tile-ic">{Ic.plan}</span>
