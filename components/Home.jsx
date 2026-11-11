@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { jam, timesAt, prayerNow, nextPrayer, currentEnds, SHALAT } from "../lib/prayer";
 import { loadVoices, idVoices, getPrefs, setPrefs, speak } from "../lib/voice";
+import { waLink, paketLink } from "../lib/whi";
 
-// Halaman depan Teman Safar: sapaan, jadwal shalat dari lokasi, kolom tujuan, dan pintasan.
+// Halaman depan Teman Safar (by Wisata Halal Indonesia): sapaan, jadwal shalat dari lokasi, kolom tujuan, dan pintasan.
 const FALLBACK = [106.85, -6.2]; // Jakarta, kalau lokasi belum diizinkan
 
 function greet(h) {
@@ -98,7 +99,7 @@ export default function Home({ gps, children, onFree, onSim, onPlan, footnote })
       <section className="hero">
         <div className="wrap hero-in">
           <div className="hero-top">
-            <p className="hello">Assalamu'alaikum,<br />{greet(h)}</p>
+            <p className="hello">Assalamu'alaikum,<br />{greet(h)}<br /><span className="tagline">#JalanLebihTenang</span></p>
             <Clock />
           </div>
           <h2>Mau safar ke mana hari ini?</h2>
@@ -126,6 +127,16 @@ export default function Home({ gps, children, onFree, onSim, onPlan, footnote })
 
       <div className="wrap home-body">
         <section className="searchcard" aria-label="Cari tujuan">{children}</section>
+
+        <section className="promo" aria-label="Wisata Halal Indonesia">
+          <small>Dari Wisata Halal Indonesia</small>
+          <b>Safar yang ibadahnya udah diurusin</b>
+          <p>Umroh dan halal tour dengan ustadz pendamping, jadwal shalat, dan makanan halal yang terjamin.</p>
+          <div className="pbtns">
+            <a className="pbtn wa" href={waLink("home")} target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.3c.1.2 1.6 2.5 4 3.5 1.5.6 2 .7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.4-.3z"/></svg>Ngobrol sama tim WHI</a>
+            <a className="pbtn alt" href={paketLink("home")} target="_blank" rel="noopener">Lihat paket</a>
+          </div>
+        </section>
 
         <h3 className="home-h">Pilihan lain</h3>
         <div className="tiles">
