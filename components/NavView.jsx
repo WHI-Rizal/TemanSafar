@@ -376,6 +376,8 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const nx = here ? nextPrayer(now, here[1], here[0]) : null;
   const cur = here ? currentEnds(now, here[1], here[0]) : null;
   const curActive = cur && SHALAT.includes(cur.nama) && !done[cur.nama];
+  // perkiraan jam sampai tujuan, buat ngasih tahu kalau shalat berikutnya baru masuk setelah sampai
+  const arriveAt = route ? now + remainSec * 1000 : Infinity;
   const mainPick = (sel?.picks || []).find((k) => k.poi) || null;
 
   // suara belokan & pengingat shalat
@@ -518,7 +520,10 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
                   <span>{KIND[mainPick.poi.kind]}{mainPick.poi.inRest ? ` di ${mainPick.poi.inRest}` : ""} · {fmtDist(mainPick.poi.along - along)} · tiba ± {jam(etaAt(route, along, mainPick.poi.along, now, factor.current))}</span></div>
                   <button className="bigbtn sm" type="button" onClick={() => goStop(mainPick.poi)}>Singgah</button></div>
               ) : curActive || nx ? (
-                <div className="pickcard"><div><small>{curActive ? `Waktu ${cur.nama}` : `${nx.nama} ${jam(nx.ms)}`}</small><span>{pois.length ? "Belum ada masjid yang pas di rute depan. Dicari terus selama jalan." : "Lagi ngumpulin data masjid di sepanjang rute…"}</span></div></div>
+                <div className="pickcard"><div><small>{curActive ? `Waktu ${cur.nama}` : `${nx.nama} ${jam(nx.ms)}`}</small><span>{
+                  !curActive && nx && arriveAt < nx.ms
+                    ? `Kamu sampai tujuan ± ${jam(arriveAt)}, sebelum masuk ${nx.nama}. Shalat ${nx.nama} bisa di tujuan.`
+                    : pois.length ? "Belum ada masjid yang pas di rute depan. Dicari terus selama jalan." : "Lagi ngumpulin data masjid di sepanjang rute…"}</span></div></div>
               ) : null}
               {curActive && <button className="linkbtn" type="button" onClick={() => markDone(cur.nama)}>Udah shalat {cur.nama}</button>}
               <button className="linkbtn" type="button" onClick={() => setSheet(sheet === "list" ? false : "list")}>{sheet === "list" ? "Tutup daftar" : `Masjid & tempat singgah di depan (${(sel?.ahead || []).filter((p) => p.kind !== "spbu").length})`}</button>
