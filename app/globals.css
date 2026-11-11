@@ -523,3 +523,11 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .tile.wide > .tile-txt { color: var(--ink); font-size: 1rem; line-height: 1.2; flex: 1; min-width: 0; }
 .tile.wide .tile-ic { flex: none; margin: 0; }
 .tiles:has(.tile.wide) { grid-template-columns: 1fr; }
+/* tombol terjemah/salin bawaan quran-madina-html nggak dipakai */
+.mushaf .quran-madina-html-icon { display: none !important; }
+/* teks doa panjang tetap turun baris di layar kecil */
+.quran.reader > .wrap, .doalist, .doa { min-width: 0; max-width: 100%; }
+.doa > *, .doa header b { overflow-wrap: anywhere; min-width: 0; }
+.doa header { flex-wrap: wrap; }
+.doa-n { white-space: normal; flex: 0 1 auto; max-width: 100%; }
+.qnav .ghost { white-space: nowrap; padding-inline: 10px; font-size: .92rem; }
