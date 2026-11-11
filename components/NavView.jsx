@@ -23,7 +23,7 @@ const POI_WINDOW = 80000;      // ambil masjid untuk 80 km ke depan
 const POI_REFETCH = 40000;     // ambil ulang tiap maju 40 km
 const OFF_ROUTE_M = 60;
 
-const KIND = { masjid: "Masjid", musala: "Musala", rest: "Rest area" };
+const KIND = { masjid: "Masjid", musala: "Musala", rest: "Rest area", spbu: "SPBU · biasanya ada musala" };
 const ICONS = {
   left: "M15 19V12a3 3 0 0 0-3-3H6m0 0 4-4M6 9l4 4",
   right: "M9 19V12a3 3 0 0 1 3-3h6m0 0-4-4m4 4-4 4",
@@ -501,7 +501,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
                 <div className="pickcard"><div><small>{curActive ? `Waktu ${cur.nama}` : `${nx.nama} ${jam(nx.ms)}`}</small><span>{pois.length ? "Belum ada masjid yang pas di rute depan. Dicari terus selama jalan." : "Lagi ngumpulin data masjid di sepanjang rute…"}</span></div></div>
               ) : null}
               {curActive && <button className="linkbtn" type="button" onClick={() => markDone(cur.nama)}>Udah shalat {cur.nama}</button>}
-              <button className="linkbtn" type="button" onClick={() => setSheet(sheet === "list" ? false : "list")}>{sheet === "list" ? "Tutup daftar" : `Masjid & rest area di depan (${(sel?.ahead || []).length})`}</button>
+              <button className="linkbtn" type="button" onClick={() => setSheet(sheet === "list" ? false : "list")}>{sheet === "list" ? "Tutup daftar" : `Masjid & tempat singgah di depan (${(sel?.ahead || []).filter((p) => p.kind !== "spbu").length})`}</button>
               {sheet === "list" && <AheadList list={aheadList} reports={reports} onStop={goStop} onReport={onReport} canReport={canReport} />}
               <VehicleSwitch compact />
               {err && <p className="note">{err}</p>}
@@ -565,12 +565,15 @@ function PrayerPlan({ sel, onStop, stop }) {
 
 function AheadList({ list, reports, onStop, onReport, canReport }) {
   if (!list.length) return <p className="note">Belum ada data masjid di rute depan.</p>;
+  // masjid, musala, rest area duluan. SPBU dipisah di bawah sebagai cadangan.
+  const main = list.filter((p) => p.kind !== "spbu"), spbu = list.filter((p) => p.kind === "spbu").slice(0, 3);
   return (
     <ul className="ahead">
-      {list.map((p) => {
+      {[...main, ...(spbu.length ? [{ id: "_h" }] : []), ...spbu].map((p) => {
+        if (p.id === "_h") return <li key="_h" className="ahead-h">SPBU · cadangan kalau masjid masih jauh</li>;
         const m = merged(poiStop(p), reports), a = ago(m.upd);
         return (
-          <li key={p.id}>
+          <li key={p.id} className={p.kind === "spbu" ? "is-spbu" : ""}>
             <div><b>{p.nama}</b><span>{KIND[p.kind]}{p.inRest ? ` di ${p.inRest}` : ""} · {fmtDist(p.km * 1000)} · tiba ± {jam(p.at)}</span>
               <span className={`fresh ${a.c}`}><i className="dot" />{m.clean ? `Toilet ${m.clean.toFixed(1)}/5 · ` : ""}{a.t}</span></div>
             <div className="ahead-btns">
