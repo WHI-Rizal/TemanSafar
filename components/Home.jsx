@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { jam, timesAt, prayerNow, nextPrayer, currentEnds, SHALAT } from "../lib/prayer";
-import { loadVoices, idVoices, getPrefs, setPrefs, speak } from "../lib/voice";
+import { loadVoices, voicesFor, getPrefs, setPrefs, speak } from "../lib/voice";
 import { waLink, paketLink } from "../lib/whi";
 
 // Halaman depan Teman Safar (by Wisata Halal Indonesia): sapaan, jadwal shalat dari lokasi, kolom tujuan, dan pintasan.
@@ -47,32 +47,37 @@ function Clock() {
   );
 }
 
-// Pengaturan suara pemandu: pilih suara terbaik yang ada di HP + kecepatan bicara
+// Pengaturan suara pemandu: cuma dua pilihan bahasa (Indonesia / English) + kecepatan bicara.
+// Suara terbaik di HP dipilih otomatis sesuai bahasanya.
+const TEST = {
+  id: "Dalam 300 meter, belok kanan ke Jalan Asia Afrika. Waktu Ashar 15 menit lagi, masjid satu setengah kilometer di depan.",
+  en: "In 300 meters, turn right onto Jalan Asia Afrika. Ashar prayer in 15 minutes, mosque one and a half kilometers ahead.",
+};
 function VoiceSettings() {
-  const [list, setList] = useState([]);
-  const [pref, setPref] = useState({ name: "", rate: 1 });
+  const [pref, setPref] = useState({ lang: "id", rate: 1 });
+  const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
-  useEffect(() => { setPref(getPrefs()); loadVoices().then(() => setList(idVoices())); }, []);
+  useEffect(() => { setPref(getPrefs()); loadVoices().then(() => setReady(true)); }, []);
   const update = (p) => { const n = { ...pref, ...p }; setPref(n); setPrefs(n); };
-  const test = () => speak("Dalam 300 meter, belok kanan ke Jalan Asia Afrika. Waktu Ashar 15 menit lagi, masjid satu setengah kilometer di depan.", { urgent: true });
-  const current = list.find((v) => v.name === pref.name) || list[0];
+  const lang = pref.lang === "en" ? "en" : "id";
+  const has = ready && voicesFor(lang).length > 0;
+  const test = () => speak(TEST[lang], { urgent: true });
   return (
     <div className="voicecard">
       <button type="button" className="voice-head" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className="tile-ic sm"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path d="M17 8.5a5 5 0 0 1 0 7" /></svg></span>
-        <span><b>Suara pemandu</b><small>{current ? current.name : "Belum ada suara Bahasa Indonesia di HP ini"}</small></span>
+        <span><b>Suara pemandu</b><small>{lang === "en" ? "English" : "Bahasa Indonesia"}</small></span>
         <span className="chev" aria-hidden="true">{open ? "▴" : "▾"}</span>
       </button>
       {open && (
         <div className="voice-body">
-          {list.length > 0 ? (
-            <div className="fld2"><label htmlFor="vsel">Pilih suara</label>
-              <select id="vsel" value={current?.name || ""} onChange={(e) => update({ name: e.target.value })}>
-                {list.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
-              </select></div>
-          ) : (
-            <p className="note">Pasang suara Bahasa Indonesia biar pemandunya lancar.<br />Android: Setelan, Bahasa & input, Output text-to-speech, Google, pasang Bahasa Indonesia.<br />iPhone: Setelan, Aksesibilitas, Konten Lisan, Suara, Indonesia, unduh Damayanti (Ditingkatkan).</p>
-          )}
+          <div className="modes" role="group" aria-label="Bahasa suara pemandu">
+            <button type="button" aria-pressed={lang === "id"} onClick={() => update({ lang: "id" })}>Bahasa Indonesia</button>
+            <button type="button" aria-pressed={lang === "en"} onClick={() => update({ lang: "en" })}>English</button>
+          </div>
+          {ready && !has && (lang === "en"
+            ? <p className="note">Belum ada suara English di HP ini. Pasang lewat pengaturan text-to-speech HP lu.</p>
+            : <p className="note">Pasang suara Bahasa Indonesia biar pemandunya lancar.<br />Android: Setelan, Bahasa & input, Output text-to-speech, Google, pasang Bahasa Indonesia.<br />iPhone: Setelan, Aksesibilitas, Konten Lisan, Suara, Indonesia, unduh Damayanti (Ditingkatkan).</p>)}
           <div className="fld2"><label htmlFor="vrate">Kecepatan bicara · {pref.rate.toFixed(1)}x</label>
             <input id="vrate" type="range" min="0.8" max="1.3" step="0.1" value={pref.rate} onChange={(e) => update({ rate: Number(e.target.value) })} /></div>
           <button type="button" className="ghost" onClick={test}>Tes suara</button>
