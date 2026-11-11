@@ -151,15 +151,15 @@ export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, fo
 
         <h3 className="home-h">Pilihan lain</h3>
         <div className="tiles">
-          <button type="button" className="tile" onClick={onFree}>
+          <button type="button" className="tile wide" onClick={onFree}>
             <span className="tile-ic">{Ic.free}</span>
-            <b>Jalan tanpa tujuan</b>
-            <span>Langsung jalan. Jadwal shalat dan masjid di depan ikut posisi lu.</span>
+            <span className="tile-txt"><b>Jalan tanpa tujuan</b>
+            <span>Langsung jalan. Jadwal shalat dan masjid di depan ikut posisi lu.</span></span>
           </button>
-          <button type="button" className="tile" onClick={onPlan}>
+          <button type="button" className="tile wide" onClick={onPlan}>
             <span className="tile-ic">{Ic.plan}</span>
-            <b>Rencana perjalanan</b>
-            <span>Cek dari rumah, shalat apa aja yang kena di jalan.</span>
+            <span className="tile-txt"><b>Rencana perjalanan</b>
+            <span>Cek dari rumah, shalat apa aja yang kena di jalan.</span></span>
           </button>
           <button type="button" className="tile wide" onClick={onQuran}>
             <span className="tile-ic">{Ic.quran}</span>
