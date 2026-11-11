@@ -4,7 +4,7 @@ import { geocode, searchFull, fetchPois, fmtDist } from "../lib/nav";
 import { hav } from "../lib/geo";
 
 // Kolom tujuan yang gampang: ketik 2 huruf langsung muncul saran, Enter pilih yang teratas,
-// pas kosong muncul riwayat, masjid terdekat, dan kota populer. Pilih saran = rute langsung dihitung.
+// pas kosong muncul riwayat, tujuan populer, terus satu masjid terdekat di paling bawah. Pilih saran = rute langsung dihitung.
 const RECENT_KEY = "ts-recent";
 const POPULAR = ["Bandung", "Semarang", "Yogyakarta", "Surabaya", "Malang", "Bogor", "Cirebon", "Solo"];
 const POP_COORD = { Yogyakarta: [110.3695, -7.7956] };
@@ -124,7 +124,6 @@ export default function SearchField({ value, onPick, near, autoFocus }) {
 
       {!open && !value && (
         <div className="sf-chips" aria-label="Tujuan cepat">
-          {nearby[0] && <button type="button" className="chip-q mosque" onClick={() => choose(nearby[0])}>{I.masjid}Masjid terdekat</button>}
           {loadRecentSafe(recent).slice(0, 2).map((r) => <button key={r.nama + r.lat} type="button" className="chip-q" onClick={() => choose(r)}>{I.recent}{r.nama}</button>)}
           {popular.slice(0, 4).map((c) => <button key={c[0]} type="button" className="chip-q" onClick={() => choose({ nama: c[0], detail: c[3], lon: c[5], lat: c[4], kind: "kota" })}>{c[0]}</button>)}
         </div>
@@ -134,14 +133,14 @@ export default function SearchField({ value, onPick, near, autoFocus }) {
         <ul className="sf-list" id="sf-list" role="listbox">
           {showEmpty ? (
             <>
-              {nearby.length > 0 && <li className="sf-h">Masjid terdekat</li>}
-              {nearby.map((h, i) => <Row key={"n" + i} h={h} i={-1} extra={fmtDist(h.d)} />)}
               {recent.length > 0 && <li className="sf-h">Terakhir dicari</li>}
-              {recent.map((h, i) => <Row key={"r" + i} h={h} i={-1} icon={I.recent} extra={dist(h)} />)}
-              <li className="sf-h">Kota populer</li>
+              {recent.slice(0, 4).map((h, i) => <Row key={"r" + i} h={h} i={-1} icon={I.recent} extra={dist(h)} />)}
+              <li className="sf-h">Tujuan populer</li>
               <li className="sf-pop">
                 {popular.map((c) => <button key={c[0]} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => choose({ nama: c[0], detail: c[3], lon: c[5], lat: c[4], kind: "kota" })}>{c[0]}</button>)}
               </li>
+              {nearby[0] && <li className="sf-h">Mau shalat dulu?</li>}
+              {nearby[0] && <Row h={nearby[0]} i={-1} extra={fmtDist(nearby[0].d)} />}
             </>
           ) : (
             <>
