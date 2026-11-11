@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import NavView from "./NavView";
 import PlanView from "./PlanView";
+import QuranView from "./QuranView";
 import ReportSheet from "./ReportSheet";
 import { firebaseReady, subscribeReports } from "../lib/firebase";
 
@@ -22,7 +23,7 @@ export default function App() {
     return off;
   }, []);
 
-  const pick = (t) => { setTab(t); try { localStorage.setItem("jm-tab", t); } catch {} window.scrollTo({ top: 0 }); };
+  const pick = (t) => { setTab(t); try { if (t !== "quran") localStorage.setItem("jm-tab", t); } catch {} window.scrollTo({ top: 0 }); };
   const toggle = (k) => { const n = new Set(filters); n.has(k) ? n.delete(k) : n.add(k); setFilters(n); };
   const say = (t) => { setToast(t); setTimeout(() => setToast(""), 2800); };
   const onReport = useCallback((s) => setReportFor(s), []);
@@ -47,8 +48,9 @@ export default function App() {
         </div>
       </header>
       <main>
-        {tab === "nav" && <NavView reports={reports} onReport={onReport} canReport={firebaseReady} setLiveFix={setLiveFix} onPlan={() => pick("rencana")} />}
+        {tab === "nav" && <NavView reports={reports} onReport={onReport} canReport={firebaseReady} setLiveFix={setLiveFix} onPlan={() => pick("rencana")} onQuran={() => pick("quran")} />}
         {tab === "rencana" && <PlanView {...common} />}
+        {tab === "quran" && <QuranView onBack={() => pick("nav")} />}
         {tab === "rencana" && (
           <div className="wrap">
             <p className="note" style={{ paddingBottom: 32 }}>
