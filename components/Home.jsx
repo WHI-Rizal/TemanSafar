@@ -178,6 +178,7 @@ export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, fo
           <li><span>{Ic.people}</span><div><b>Info dari sesama musafir</b><small>Kebersihan toilet, mukena, parkir. Dilaporin langsung dari lokasi.</small></div></li>
         </ul>
         <p className="note credit">{footnote}</p>
+        <p className="note credit"><a href="/privasi">Kebijakan privasi</a> · © PT. Wisata Halal Indonesia</p>
       </div>
     </div>
   );
