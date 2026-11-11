@@ -215,7 +215,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     const wp = rt.steps.find((s) => s.waypoint);
     if (wp && !atStop && along >= wp.along - 50 && along < wp.along + 600) { setAtStop(true); logStop(stop); speak(EN() ? `You have arrived at ${stop?.nama || "your stop"}` : `Sampai di ${stop?.nama || "tempat singgah"}`, muted); }
     if (remain < 40) { setPhase("arrived"); if (target) logStop(target); speak(EN() ? "You have arrived. Alhamdulillah." : "Sampai di tujuan. Alhamdulillah.", muted); }
-  }, [loadPois, muted, setLiveFix, stop, atStop, mode, avoidToll]);
+  }, [loadPois, muted, setLiveFix, stop, atStop, mode, avoidToll, target]);
 
   // ---------- mulai / berhenti ----------
   const keepAwake = async () => { try { if ("wakeLock" in navigator) wake.current = await navigator.wakeLock.request("screen"); } catch {} };
