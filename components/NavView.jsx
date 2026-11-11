@@ -171,7 +171,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const preview = async (d = dest) => {
     if (!d) { setErr("Pilih tujuan dulu dari daftar yang muncul."); return; }
     const from = origin ? [origin.lon, origin.lat] : gps;
-    if (!from) { setErr("Lokasi lu belum kebaca. Izinkan akses lokasi, atau isi kolom Dari buat simulasi."); return; }
+    if (!from) { setErr("Lokasi kamu belum kebaca. Izinkan akses lokasi, atau isi kolom Dari buat simulasi."); return; }
     const rt = await plan(from, d, null);
     if (rt) { setStop(null); setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); setNow(Date.now()); setPhase("preview"); }
   };
@@ -433,9 +433,9 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
         {showFrom || origin ? (
           <PlaceField id="asal" label="Dari" value={origin} onPick={(o) => { setOrigin(o); if (!o) setShowFrom(false); }} placeholder="Lokasi saya (GPS)" near={gps} allowMe />
         ) : (
-          <p className="fromline">Dari <b>{gps ? "lokasi lu sekarang" : "lokasi lu (izinkan GPS)"}</b> · <button type="button" className="linkbtn inline" onClick={() => setShowFrom(true)}>Ubah</button></p>
+          <p className="fromline">Dari <b>{gps ? "lokasi kamu sekarang" : "lokasi kamu (izinkan GPS)"}</b> · <button type="button" className="linkbtn inline" onClick={() => setShowFrom(true)}>Ubah</button></p>
         )}
-        {origin && <p className="note">Titik awal bukan lokasi lu sekarang, jadi perjalanan bakal disimulasikan ({SIM_SPEED}x lebih cepat).</p>}
+        {origin && <p className="note">Titik awal bukan lokasi kamu sekarang, jadi perjalanan bakal disimulasikan ({SIM_SPEED}x lebih cepat).</p>}
         {err && <div className="err" role="alert">{err}</div>}
         <button className="bigbtn" type="button" onClick={() => preview()} disabled={phase === "routing"}>{phase === "routing" ? "Menghitung rute…" : "Lihat rute"}</button>
       </Home>
