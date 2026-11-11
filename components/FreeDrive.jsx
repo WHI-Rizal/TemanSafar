@@ -6,7 +6,7 @@ import { jam, timesAt, nextPrayer, currentEnds, prayerNow, SHALAT } from "../lib
 import { hav, bearing } from "../lib/geo";
 import { snapToLines, coordAt, nearCity, LINES } from "../lib/route";
 import { fetchPois, fmtDist, sayDist, fmtDur } from "../lib/nav";
-import { speak as voiceSpeak, stop as voiceStop } from "../lib/voice";
+import { speak as voiceSpeak, stop as voiceStop, voiceLang } from "../lib/voice";
 
 // Mode "Jalan tanpa tujuan": cukup GPS. Jadwal shalat dari posisi, masjid & rest area asli di depan.
 const SIM_SPEED = (typeof window !== "undefined" && Number(new URLSearchParams(window.location.search).get("simx"))) || 10;
@@ -159,12 +159,12 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
     const left = (nx.ms - now) / 60e3, key = "p15-" + nx.nama + todayKey(nx.ms);
     if (left > 0 && left <= 15 && !said.current.has(key)) {
       said.current.add(key);
-      speak(`Waktu ${nx.nama} ${Math.round(left)} menit lagi.` + (pick?.p ? ` ${pick.p.nama}, ${sayDist(pick.p.d)} di depan.` : ""), muted);
+      speak(voiceLang() === "en" ? `${nx.nama} prayer in ${Math.round(left)} minutes.` + (pick?.p ? ` ${pick.p.nama}, ${sayDist(pick.p.d, "en")} ahead.` : "") : `Waktu ${nx.nama} ${Math.round(left)} menit lagi.` + (pick?.p ? ` ${pick.p.nama}, ${sayDist(pick.p.d)} di depan.` : ""), muted);
       try { if (Notification.permission === "granted") navigator.serviceWorker?.getRegistration().then((r) => r?.showNotification(`${nx.nama} ${Math.round(left)} menit lagi`, { body: pick?.p ? `${pick.p.nama}, ${fmtDist(pick.p.d)} lagi` : "Siapkan tempat berhenti", tag: key, icon: "/icons/icon-192.png" })); } catch {}
     }
     if (pick?.p && pick.p.d < 1500 && !said.current.has("near-" + pick.p.id)) {
       said.current.add("near-" + pick.p.id);
-      speak(`${pick.p.nama} ${sayDist(pick.p.d)} lagi, ${pick.label.toLowerCase()}.`, muted);
+      speak(voiceLang() === "en" ? `${pick.p.nama} in ${sayDist(pick.p.d, "en")}.` : `${pick.p.nama} ${sayDist(pick.p.d)} lagi, ${pick.label.toLowerCase()}.`, muted);
     }
   }, [nx, now, pick, muted]);
 
