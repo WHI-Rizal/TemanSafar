@@ -382,3 +382,64 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .mini-main > span { color: var(--muted); font-size: .88rem; }
 .mini-pick { grid-column: 1 / -1; font-size: .84rem; color: var(--sign); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .navsheet, .navbtns { transition: none; } }
+
+/* ===== Tema WHI: teal, oranye, pasir. Font Plus Jakarta Sans + Anton buat judul ===== */
+@font-face { font-family: "PJS"; src: url(/fonts/plus-jakarta-sans-latin-400-normal.woff2) format("woff2"); font-weight: 400; }
+@font-face { font-family: "PJS"; src: url(/fonts/plus-jakarta-sans-latin-500-normal.woff2) format("woff2"); font-weight: 500; }
+@font-face { font-family: "PJS"; src: url(/fonts/plus-jakarta-sans-latin-700-normal.woff2) format("woff2"); font-weight: 600 700; }
+@font-face { font-family: "PJS"; src: url(/fonts/plus-jakarta-sans-latin-800-normal.woff2) format("woff2"); font-weight: 800 900; }
+@font-face { font-family: "Anton"; src: url(/fonts/anton-latin-400-normal.woff2) format("woff2"); font-weight: 400; }
+:root {
+  --bg: #FBF5EA; --surface: #FFFFFF; --ink: #241A12; --muted: #6A5C4E; --line: #EADCC2;
+  --sign: #0E8174; --sign-deep: #0A655A; --sign-ink: #FFFFFF; --accent: #F0641B; --accent-ink: #FFFFFF;
+  --gold: #DD9E36; --good: #0E8174; --chip: #F4EAD6;
+  --display: "PJS", "Plus Jakarta Sans", system-ui, sans-serif;
+  --body: "PJS", "Plus Jakarta Sans", system-ui, sans-serif;
+  --headline: "Anton", Impact, "Arial Narrow", sans-serif;
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.08' stroke-width='1.2'%3E%3Crect x='17' y='17' width='22' height='22'/%3E%3Crect x='17' y='17' width='22' height='22' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
+}
+.hero h2 { font-family: var(--headline); font-weight: 400; font-size: 2.3rem; letter-spacing: .01em; line-height: 1.05; text-transform: uppercase; }
+.pc-name { color: #FFD9B8; }
+.pc-row div.on { background: var(--accent); color: #fff; }
+.brand h1 { font-family: var(--headline); font-weight: 400; font-size: 1.6rem; letter-spacing: .03em; text-transform: uppercase; }
+.by-whi { display: inline-flex; align-items: center; gap: 6px; font-size: .74rem; font-weight: 700; background: rgba(255,255,255,.14); border-radius: 999px; padding: 3px 10px 3px 4px; margin-top: 3px; width: fit-content; }
+.by-whi i { width: 18px; height: 18px; border-radius: 50%; background: #fff; color: var(--sign); font-style: normal; font-weight: 900; font-size: 8px; display: flex; align-items: center; justify-content: center; letter-spacing: -.02em; }
+.tagline { font-weight: 800; color: #FFD9B8; }
+.bigbtn, .go { background: var(--accent); color: #fff; }
+.chip-q.mosque { border-color: var(--sign); color: var(--sign); }
+.promo { position: relative; overflow: hidden; border-radius: 18px; background: linear-gradient(135deg, #0A655A 0%, #0E8174 60%, #129987 100%); color: #fff; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.promo::after { content: ""; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, rgba(221,158,54,.45), transparent 70%); }
+.promo small { font-weight: 800; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: #FFD9B8; }
+.promo b { font-family: var(--headline); font-weight: 400; font-size: 1.45rem; line-height: 1.1; letter-spacing: .01em; text-transform: uppercase; }
+.promo p { margin: 0; font-size: .88rem; opacity: .92; line-height: 1.4; }
+.promo .pbtns { display: flex; gap: 8px; margin-top: 4px; position: relative; z-index: 1; }
+.promo .pbtn { border: 0; border-radius: 10px; min-height: 42px; padding: 0 14px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; font-family: var(--body); font-size: .9rem; }
+.promo .pbtn.wa { background: #fff; color: var(--sign); }
+.promo .pbtn.alt { background: rgba(255,255,255,.14); color: #fff; }
+.banner { background: var(--sign); }
+.pchip-nav.hot { background: var(--accent); color: #fff; }
+.poi.pick { background: var(--accent); color: #fff; }
+.ev-pin { background: var(--accent); color: #fff; }
+.ev-pin::after { border-top-color: var(--accent); }
+.eta-big { color: var(--sign); }
+.pickcard { border-left-color: var(--accent); }
+.pickcard small { color: var(--accent); }
+:root { color-scheme: light; --accent-ink: #FFFFFF; --warn: #C84E0E; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14110D; --surface: #1F1A14; --ink: #F3EADB; --muted: #B5A690; --line: #3A3026;
+    --sign: #12957F; --sign-deep: #0E7A69; --accent: #F27A3A; --chip: #2A2219; --good: #3DBA9F;
+    color-scheme: dark;
+  }
+}
+/* ajakan WHI: cuma muncul pas berhenti (sampai di masjid / tujuan), nggak pernah pas nyetir */
+.sharebtn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; border-radius: 12px; border: 1.5px dashed var(--sign); background: transparent; color: var(--sign); font-weight: 800; font-family: var(--body); font-size: .95rem; cursor: pointer; margin-top: 4px; }
+.sharebtn:disabled { opacity: .6; }
+.softcta { display: flex; gap: 12px; align-items: center; background: var(--chip); border-radius: 14px; padding: 12px; margin-top: 4px; }
+.softcta .whi-dot { flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--headline); font-size: 13px; letter-spacing: .03em; display: flex; align-items: center; justify-content: center; }
+.softcta div { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.softcta div b { font-family: var(--body); font-size: .92rem; }
+.softcta small { color: var(--muted); font-size: .8rem; line-height: 1.35; }
+.softcta a { flex: none; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 800; min-height: 40px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; }
+.promo .pbtn { text-decoration: none; }
+.arrive b { font-family: var(--body); font-weight: 800; }
