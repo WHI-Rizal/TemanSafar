@@ -5,14 +5,14 @@ import { merged, ago } from "../lib/data";
 import { jam, timesAt, nextPrayer, currentEnds, prayerNow, SHALAT } from "../lib/prayer";
 import { hav, bearing } from "../lib/geo";
 import { snapToLines, coordAt, nearCity, LINES } from "../lib/route";
-import { fetchPois, fmtDist, sayDist, fmtDur } from "../lib/nav";
+import { fetchPois, fmtDist, sayDist, fmtDur, preferMosque } from "../lib/nav";
 import { speak as voiceSpeak, stop as voiceStop, voiceLang } from "../lib/voice";
 
 // Mode "Jalan tanpa tujuan": cukup GPS. Jadwal shalat dari posisi, masjid & rest area asli di depan.
 const SIM_SPEED = (typeof window !== "undefined" && Number(new URLSearchParams(window.location.search).get("simx"))) || 10;
 const REFETCH_M = 3000;
 const AHEAD_KM = 20;
-const KIND = { masjid: "Masjid", musala: "Musala", rest: "Rest area" };
+const KIND = { masjid: "Masjid", musala: "Musala", rest: "Rest area", spbu: "SPBU · biasanya ada musala" };
 const todayKey = (ms) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10);
 const angDiff = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
 const poiStop = (p) => ({ id: p.id, nama: p.nama, ruasNama: KIND[p.kind] + (p.inRest ? ` · di ${p.inRest}` : ""), lat: p.lat, lon: p.lon, approx: false });
@@ -125,9 +125,11 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
       out.push({ ...p, d, at: now + ((d * 1.25) / v) * 1000 });
     }
     let res = out;
+    // SPBU cuma buat jalan biasa, di tol cukup rest area
+    if (onToll) res = res.filter((p) => p.kind !== "spbu");
     if (onToll && hdg != null) {
       const rests = out.filter((p) => p.kind === "rest" && isLeft(here, hdg, p));
-      res = out.filter((p) => {
+      res = res.filter((p) => {
         if (p.kind === "rest") return rests.includes(p);
         const host = rests.find((r) => hav([r.lon, r.lat], [p.lon, p.lat]) < 300);
         if (host) p.inRest = host.nama;
@@ -146,9 +148,9 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
   const nx = here ? nextPrayer(now, here[1], here[0]) : null;
 
   let pick = null;
-  if (curActive) { const p = ahead.find((x) => x.at < cur.ends - 10 * 60e3); pick = { label: `Masih keburu shalat ${cur.nama}`, p }; }
+  if (curActive) { const p = preferMosque(ahead.filter((x) => x.at < cur.ends - 10 * 60e3)); pick = { label: `Masih keburu shalat ${cur.nama}`, p }; }
   else if (nx) {
-    const p = ahead.find((x) => x.at >= nx.ms) || ((nx.ms - now) < 30 * 60e3 ? ahead[0] : null);
+    const p = preferMosque(ahead.filter((x) => x.at >= nx.ms)) || ((nx.ms - now) < 30 * 60e3 ? preferMosque(ahead) : null);
     pick = { label: `Pas buat shalat ${nx.nama} (${jam(nx.ms)})`, p };
   }
   const pickIds = useMemo(() => new Set(pick?.p ? [pick.p.id] : []), [pick?.p?.id]);
@@ -223,14 +225,15 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
             </div>
           )}
           {curActive && <button className="linkbtn" type="button" onClick={() => markDone(cur.nama)}>Udah shalat {cur.nama}</button>}
-          <button className="linkbtn" type="button" onClick={() => setList(!list)}>{list ? "Tutup daftar" : `Masjid & rest area di depan (${ahead.length})`}</button>
+          <button className="linkbtn" type="button" onClick={() => setList(!list)}>{list ? "Tutup daftar" : `Masjid & tempat singgah di depan (${ahead.filter((p) => p.kind !== "spbu").length})`}</button>
           {list && (
             ahead.length ? (
               <ul className="ahead">
-                {ahead.slice(0, 8).map((p) => {
+                {(() => { const main = ahead.filter((p) => p.kind !== "spbu").slice(0, 8), sp = ahead.filter((p) => p.kind === "spbu").slice(0, 3); return [...main, ...(sp.length ? [{ id: "_h" }] : []), ...sp]; })().map((p) => {
+                  if (p.id === "_h") return <li key="_h" className="ahead-h">SPBU · cadangan kalau masjid masih jauh</li>;
                   const m = merged(poiStop(p), reports), a = ago(m.upd);
                   return (
-                    <li key={p.id}>
+                    <li key={p.id} className={p.kind === "spbu" ? "is-spbu" : ""}>
                       <div><b>{p.nama}</b><span>{KIND[p.kind]}{p.inRest ? ` di ${p.inRest}` : ""} · ± {fmtDist(p.d)} · tiba ± {jam(p.at)}</span>
                         <span className={`fresh ${a.c}`}><i className="dot" />{m.clean ? `Toilet ${m.clean.toFixed(1)}/5 · ` : ""}{a.t}</span></div>
                       <div className="ahead-btns">
