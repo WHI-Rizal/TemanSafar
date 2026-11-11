@@ -531,3 +531,12 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .doa header { flex-wrap: wrap; }
 .doa-n { white-space: normal; flex: 0 1 auto; max-width: 100%; }
 .qnav .ghost { white-space: nowrap; padding-inline: 10px; font-size: .92rem; }
+/* halaman kebijakan privasi */
+.legal { padding-block: 24px 60px; background: var(--bg); color: var(--ink); }
+.legal .wrap { max-width: 720px; display: flex; flex-direction: column; gap: 10px; }
+.legal h1 { font-family: var(--headline); font-weight: 400; text-transform: uppercase; font-size: 2rem; line-height: 1.1; margin: 8px 0 0; text-wrap: balance; }
+.legal h2 { font-size: 1.15rem; margin: 18px 0 0; }
+.legal h3 { font-size: 1rem; margin: 8px 0 0; }
+.legal p, .legal li { line-height: 1.6; font-size: .95rem; }
+.legal ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.legal a { color: var(--sign); font-weight: 700; }
