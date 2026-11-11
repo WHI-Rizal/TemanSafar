@@ -54,7 +54,7 @@ export default function ReportSheet({ stop, liveFix, onClose, onSent }) {
             <div className="scale"><span>Jorok</span><span>Bersih banget</span></div>
           </fieldset>
           <fieldset>
-            <legend>Yang lu lihat sekarang</legend>
+            <legend>Yang kamu lihat sekarang</legend>
             {QS.map(([q, l]) => (
               <div className="q" key={q}><span>{l}</span>
                 <div className="yn">
@@ -69,7 +69,7 @@ export default function ReportSheet({ stop, liveFix, onClose, onSent }) {
           <textarea id="catatan" maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Misal: toilet pria antre, mukena ada tapi sedikit" />
           {canLoc && (
             <label className="check" htmlFor="useloc"><input id="useloc" type="checkbox" checked={useLoc} onChange={(e) => setUseLoc(e.target.checked)} />
-              <span>Kirim titik GPS gue sekarang. Ini bantu benerin posisi rest area di peta dan nunjukin laporan ini dikirim dari lokasi.</span></label>
+              <span>Kirim titik GPS saya sekarang. Ini bantu benerin posisi rest area di peta dan nunjukin laporan ini dikirim dari lokasi.</span></label>
           )}
           {err && <p className="err" role="alert">{err}</p>}
           <div className="actions" style={{ gridTemplateColumns: "1fr 1.4fr" }}>
