@@ -4,10 +4,12 @@ import FreeDrive from "./FreeDrive";
 import Home from "./Home";
 import SearchField, { saveRecent } from "./SearchField";
 import Sheet, { useMini } from "./Sheet";
+import WhiCta from "./WhiCta";
+import { shareStory } from "../lib/story";
 import { speak as voiceSpeak, stop as voiceStop } from "../lib/voice";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
-import { jam, nextPrayer, currentEnds, SHALAT } from "../lib/prayer";
+import { jam, nextPrayer, currentEnds, prayerNow, SHALAT } from "../lib/prayer";
 import { project, pointAt, headingAt, sample, hav } from "../lib/geo";
 import {
   geocode, fetchRoute, fetchPois, placePois, pickStops, stepIndexAt, durAt, etaAt,
@@ -112,6 +114,8 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const watch = useRef(null), wake = useRef(null), said = useRef(new Set()), poiCache = useRef(new Map());
   const lastFetch = useRef(-1e9), off = useRef(0), lastReroute = useRef(0), factor = useRef(1), started = useRef(null), seg = useRef(1);
   const routeRef = useRef(null); routeRef.current = route;
+  const trip = useRef(null); // catatan perjalanan buat kartu Story: { from, to, km, start, stops }
+  const [sharing, setSharing] = useState(false);
   const atStopRef = useRef(false); atStopRef.current = atStop;
 
   // posisi awal (buat bias pencarian & titik berangkat)
@@ -123,6 +127,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const markDone = (p) => { const nd = { ...done, [p]: true }; setDone(nd); try { localStorage.setItem("jm-done", JSON.stringify({ day: todayKey(now), p: nd })); } catch {} };
 
   const clock = useCallback(() => (sim ? sim.simStart + (Date.now() - sim.realStart) * SIM_SPEED : Date.now()), [sim]);
+  const clockRef = useRef(clock); clockRef.current = clock;
 
   // ---------- ambil masjid di jendela depan ----------
   const loadPois = useCallback(async (rt, fromAlong) => {
@@ -198,8 +203,8 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     // sampai?
     const remain = rt.distance - along;
     const wp = rt.steps.find((s) => s.waypoint);
-    if (wp && !atStop && along >= wp.along - 50 && along < wp.along + 600) { setAtStop(true); speak(`Sampai di ${stop?.nama || "tempat singgah"}`, muted); }
-    if (remain < 40) { setPhase("arrived"); speak("Sampai di tujuan. Alhamdulillah.", muted); }
+    if (wp && !atStop && along >= wp.along - 50 && along < wp.along + 600) { setAtStop(true); logStop(stop); speak(`Sampai di ${stop?.nama || "tempat singgah"}`, muted); }
+    if (remain < 40) { setPhase("arrived"); if (target) logStop(target); speak("Sampai di tujuan. Alhamdulillah.", muted); }
   }, [loadPois, muted, setLiveFix, stop, atStop, mode, avoidToll]);
 
   // ---------- mulai / berhenti ----------
@@ -216,6 +221,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch {}
     speak(instr(rt.steps[0]) + (rt.steps[1] ? `, lalu ${instr(rt.steps[1]).toLowerCase()}` : ""), muted); // juga membuka izin suara di iOS
     setFollow(true); setSheet(false); setPhase("nav");
+    if (!trip.current) trip.current = { from: origin?.nama || "", to: dest?.nama || target?.nama || "Tujuan", km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [] };
     if (simulated) { setSim({ realStart: Date.now(), simStart: Date.now() }); return; }
     watch.current = navigator.geolocation.watchPosition(
       (p) => onFixRef.current({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, speed: p.coords.speed, heading: p.coords.heading, t: Date.now() }),
@@ -231,7 +237,27 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     try { wake.current?.release(); } catch {}
     voiceStop();
     setPhase("setup"); setRoute(null); setStop(null); setAtStop(false); setPois([]); setState(null); setTarget(null);
+    trip.current = null;
   };
+
+  // ---------- kartu Story ----------
+  const logStop = (p) => {
+    if (!p || !trip.current) return;
+    const t = clockRef.current(), pr = prayerNow(t, p.lat, p.lon);
+    if (!trip.current.stops.some((s) => s.nama === p.nama)) trip.current.stops.push({ nama: p.nama, prayer: SHALAT.includes(pr) ? pr : "" });
+  };
+  const share = async () => {
+    const tr = trip.current; if (!tr) return;
+    setSharing(true);
+    try { await shareStory({ ...tr, mins: Math.max(1, Math.round((clockRef.current() - tr.start) / 60000)) }); } catch {}
+    setSharing(false);
+  };
+  const ShareBtn = () => (
+    <button type="button" className="sharebtn" onClick={share} disabled={sharing}>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13" /></svg>
+      {sharing ? "Menyiapkan gambar…" : "Bagikan ke Story"}
+    </button>
+  );
 
   // dari mode tanpa tujuan: langsung dituntun ke masjid yang dipilih
   const startTo = async (p, here, simulated) => {
@@ -242,7 +268,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     setOrigin(simulated ? { nama: "Posisi simulasi", lon: from[0], lat: from[1] } : null);
     setTarget({ ...p, simulated });
     const rt = await plan(from, { lon: p.lon, lat: p.lat }, null, "setup");
-    if (rt) { setStop(null); setAtStop(false); setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); begin(rt, simulated); }
+    if (rt) { setStop(null); setAtStop(false); setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); trip.current = { from: "", to: p.nama, km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [] }; begin(rt, simulated); }
   };
   const backToFree = () => { const s = !!target?.simulated; end(); setFree({ simulate: s }); };
   useEffect(() => () => { if (watch.current != null) navigator.geolocation.clearWatch(watch.current); }, []);
@@ -488,11 +514,13 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
                 <button className="ghost" type="button" onClick={() => onReport(poiStop(stop))} disabled={!canReport}>Lapor kondisi</button>
                 <button className="bigbtn" type="button" onClick={resume}>Lanjut perjalanan</button>
               </div>
+              <ShareBtn />
+              <WhiCta place="singgah" />
             </div>
           )}
 
           {phase === "arrived" && !target && (
-            <div className="arrive"><b>Sampai di tujuan. Alhamdulillah.</b><div className="row2"><button className="bigbtn" type="button" onClick={end}>Selesai</button></div></div>
+            <div className="arrive"><b>Sampai di tujuan. Alhamdulillah.</b><div className="row2"><button className="bigbtn" type="button" onClick={end}>Selesai</button></div><ShareBtn /><WhiCta place="tujuan" /></div>
           )}
           {phase === "arrived" && target && (
             <div className="arrive">
@@ -501,6 +529,8 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
                 <button className="ghost" type="button" onClick={() => onReport(poiStop(target))} disabled={!canReport}>Lapor kondisi</button>
                 <button className="bigbtn" type="button" onClick={backToFree}>Lanjut jalan</button>
               </div>
+              <ShareBtn />
+              <WhiCta place="singgah" />
             </div>
           )}
 
