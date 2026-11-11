@@ -443,3 +443,4 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .softcta a { flex: none; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 800; min-height: 40px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; }
 .promo .pbtn { text-decoration: none; }
 .arrive b { font-family: var(--body); font-weight: 800; }
+.by-whi .whi-logo { width: 18px; height: 18px; border-radius: 50%; background: #fff; object-fit: contain; padding: 1px; flex: none; }
