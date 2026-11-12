@@ -264,7 +264,7 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .tabs button[aria-selected="true"] { background: var(--sign-ink); color: var(--sign); opacity: 1; border-bottom: 0; }
 
 .home .hero { background: linear-gradient(180deg, var(--sign) 0%, var(--sign-deep) 100%); background-image: var(--pattern), linear-gradient(180deg, var(--sign) 0%, var(--sign-deep) 100%); color: var(--sign-ink); padding-bottom: 46px; border-radius: 0 0 28px 28px; }
-.hero-in { display: flex; flex-direction: column; gap: 6px; padding-block: 8px 0; }
+.hero-in { display: flex; flex-direction: column; gap: 14px; padding-block: 8px 0; }
 .hello { margin: 0; font-size: .95rem; opacity: .85; }
 .hero h2 { font-family: var(--display); font-weight: 900; font-size: 1.75rem; line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
 .pcard { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; backdrop-filter: blur(2px); }
@@ -302,7 +302,7 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .credit { text-align: center; }
 @media (max-width: 360px) { .tiles { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
-.hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 4px; }
+.hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .hero-top .hello { line-height: 1.35; }
 .clock { text-align: right; flex: none; }
 .clock-time { display: flex; align-items: baseline; justify-content: flex-end; gap: 3px; font-family: var(--display); font-variant-numeric: tabular-nums; }
@@ -399,7 +399,7 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
   --headline: "Anton", Impact, "Arial Narrow", sans-serif;
   --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.08' stroke-width='1.2'%3E%3Crect x='17' y='17' width='22' height='22'/%3E%3Crect x='17' y='17' width='22' height='22' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
 }
-.hero h2 { font-family: var(--headline); font-weight: 400; font-size: 2.3rem; letter-spacing: .01em; line-height: 1.05; text-transform: uppercase; }
+.hero h2 { font-family: var(--headline); font-weight: 400; font-size: 1.55rem; letter-spacing: .01em; line-height: 1.05; text-transform: uppercase; margin: 0; }
 .pc-name { color: #FFD9B8; }
 .pc-row div.on { background: var(--accent); color: #fff; }
 .brand h1 { font-family: var(--headline); font-weight: 400; font-size: 1.6rem; letter-spacing: .03em; text-transform: uppercase; }
