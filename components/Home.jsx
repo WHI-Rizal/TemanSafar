@@ -194,3 +194,4 @@ export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, fo
     </div>
   );
 }
+
