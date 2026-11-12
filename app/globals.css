@@ -543,7 +543,23 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 
 /* kartu jadwal shalat di beranda: bisa diringkas */
 .pcard { position: relative; }
-.pc-tog { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(255,255,255,.16); color: #fff; font-size: .8rem; cursor: pointer; }
-.pcard .pcard-top { padding-right: 38px; }
-.pcard.short .pc-row, .pcard.short .pc-where { display: none; }
-
+/* Kartu shalat: seluruh kartu bisa diketuk. Mode ringkas pakai lingkaran hitung mundur. */
+.pcard { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .3s, border-color .3s; }
+.pcard:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.pc-chev { font-size: .62rem; opacity: .8; margin-left: 2px; }
+.pc-short { display: flex; align-items: center; gap: 14px; }
+.pc-ring { flex: none; color: inherit; }
+.pc-ring .ring-b { stroke: rgba(255,255,255,.18); }
+.pc-ring .ring-f { stroke: #FFD9B8; transition: stroke-dasharray .6s ease; }
+.pc-ring .ring-t { font-family: var(--display); font-weight: 900; font-size: 13px; fill: currentColor; }
+.pc-ring .ring-s { font-size: 8.5px; fill: currentColor; opacity: .8; }
+.pc-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pc-info .pc-name { font-size: 1.7rem; }
+.pc-sub { font-size: .82rem; opacity: .88; }
+.pc-sub b { font-family: var(--display); font-variant-numeric: tabular-nums; }
+.pcard.short { padding: 12px 14px; }
+.pcard.warn { background: linear-gradient(135deg, #F26B1D, #D9541A); border-color: rgba(255,255,255,.35); }
+.pcard.warn .pc-name { color: #fff; }
+.pcard.warn .pc-ring .ring-f { stroke: #fff; }
+.pcard.warn .pc-row div { background: rgba(0,0,0,.14); }
+.pcard.warn .pc-row div.on { background: #fff; color: #D9541A; }
