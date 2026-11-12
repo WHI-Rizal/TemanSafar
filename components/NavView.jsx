@@ -429,9 +429,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
             <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>{m === "mobil" ? <Car /> : <Moto />}{MODES[m]}</button>
           ))}
         </div>
-        {mode === "mobil"
-          ? <label className="check small" htmlFor="notoll"><input id="notoll" type="checkbox" checked={avoidToll} onChange={(e) => toggleToll(e.target.checked)} /><span>Hindari jalan tol</span></label>
-          : <p className="note mode-note">Rute motor otomatis lewat jalan biasa, nggak masuk tol.</p>}
+        {mode === "mobil" && <label className="check small" htmlFor="notoll"><input id="notoll" type="checkbox" checked={avoidToll} onChange={(e) => toggleToll(e.target.checked)} /><span>Hindari jalan tol</span></label>}
         {showFrom || origin ? (
           <PlaceField id="asal" label="Dari" value={origin} onPick={(o) => { setOrigin(o); if (!o) setShowFrom(false); }} placeholder="Lokasi saya (GPS)" near={gps} allowMe />
         ) : (
