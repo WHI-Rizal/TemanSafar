@@ -3,15 +3,29 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Laporan kondisi dari musafir: semua boleh baca, yang login (anonim) boleh nambah.
     // Nggak ada yang bisa ubah atau hapus dari aplikasi. Moderasi lewat Firebase Console.
+    function optBool(d, k) { return !(k in d) || d[k] is bool; }
+    function okLokasi(d) {
+      return !('lokasi' in d) || (
+        d.lokasi is map
+        && d.lokasi.keys().hasOnly(['lat', 'lon', 'acc'])
+        && d.lokasi.lat is number && d.lokasi.lat >= -12 && d.lokasi.lat <= 7
+        && d.lokasi.lon is number && d.lokasi.lon >= 94 && d.lokasi.lon <= 142
+        && (!('acc' in d.lokasi) || (d.lokasi.acc is number && d.lokasi.acc >= 0 && d.lokasi.acc <= 100000))
+      );
+    }
     match /laporan/{id} {
       allow read: if true;
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['masjidId','kebersihan','mukena','sarung','bus','rebahan','difabel','catatan','lokasi','uid','ts'])
-        && request.resource.data.masjidId is string && request.resource.data.masjidId.size() <= 60
+        && request.resource.data.masjidId is string
+        && request.resource.data.masjidId.size() > 0 && request.resource.data.masjidId.size() <= 60
         && request.resource.data.kebersihan is int
         && request.resource.data.kebersihan >= 1 && request.resource.data.kebersihan <= 5
+        && optBool(request.resource.data, 'mukena') && optBool(request.resource.data, 'sarung')
+        && optBool(request.resource.data, 'bus') && optBool(request.resource.data, 'rebahan')
+        && optBool(request.resource.data, 'difabel')
         && (!('catatan' in request.resource.data) || (request.resource.data.catatan is string && request.resource.data.catatan.size() <= 200))
-        && (!('lokasi' in request.resource.data) || (request.resource.data.lokasi.lat is number && request.resource.data.lokasi.lon is number))
+        && okLokasi(request.resource.data)
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.ts == request.time;
       allow update, delete: if false;
