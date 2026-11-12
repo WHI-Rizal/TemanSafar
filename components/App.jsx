@@ -15,6 +15,10 @@ export default function App() {
   const [reportFor, setReportFor] = useState(null);
   const [liveFix, setLiveFix] = useState(null);
   const [toast, setToast] = useState("");
+  const [askExit, setAskExit] = useState(false);
+  const [exitHint, setExitHint] = useState(false);
+  const now = useRef({});
+  now.current = { tab, reportFor };
 
   useEffect(() => {
     try { const t = localStorage.getItem("jm-tab"); if (t === "nav" || t === "rencana") setTab(t); } catch {}
@@ -23,6 +27,42 @@ export default function App() {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") navigator.serviceWorker.register("/sw.js").catch(() => {});
     return off;
   }, []);
+
+  // Tombol kembali HP (cuma di aplikasi terpasang / APK).
+  // Kita selipkan satu "langkah" palsu di riwayat, jadi tombol kembali nggak langsung nutup aplikasi:
+  // tutup lembar laporan dulu, balik ke tab Navigasi dulu, baru di beranda tanya "yakin keluar?".
+  // Langkah palsunya dipasang ulang tiap kali pengguna menyentuh layar (Chrome minta ada sentuhan dulu).
+  useEffect(() => {
+    const mm = (q) => { try { return window.matchMedia(q).matches; } catch { return false; } };
+    const app = mm("(display-mode: standalone)") || mm("(display-mode: fullscreen)") || document.referrer.startsWith("android-app://");
+    if (!app) return;
+    let armed = false;
+    const arm = (e) => {
+      if (armed || e?.target?.closest?.(".exit-sheet")) return;
+      try { history.pushState({ ...(history.state || {}), tsGuard: 1 }, ""); armed = true; } catch {}
+    };
+    const onPop = () => {
+      armed = false;
+      const s = now.current;
+      if (s.reportFor) { setReportFor(null); arm(); }
+      else if (s.tab !== "nav") { setTab("nav"); window.scrollTo({ top: 0 }); arm(); }
+      else { setExitHint(false); setAskExit(true); }
+    };
+    window.addEventListener("popstate", onPop);
+    document.addEventListener("pointerdown", arm, true);
+    document.addEventListener("keydown", arm, true);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      document.removeEventListener("pointerdown", arm, true);
+      document.removeEventListener("keydown", arm, true);
+    };
+  }, []);
+  const stay = () => { setAskExit(false); try { history.pushState({ ...(history.state || {}), tsGuard: 1 }, ""); } catch {} };
+  const leave = () => {
+    try { window.close(); } catch {}
+    // kalau aplikasinya nggak mau ditutup lewat kode, tombol kembali berikutnya yang nutup
+    setTimeout(() => setExitHint(true), 300);
+  };
 
   const pick = (t) => { setTab(t); try { if (t !== "quran") localStorage.setItem("jm-tab", t); } catch {} window.scrollTo({ top: 0 }); };
   const toggle = (k) => { const n = new Set(filters); n.has(k) ? n.delete(k) : n.add(k); setFilters(n); };
@@ -63,6 +103,21 @@ export default function App() {
       </main>
       {reportFor && <ReportSheet stop={reportFor} liveFix={liveFix} onClose={() => setReportFor(null)} onSent={() => { setReportFor(null); say("Laporan terkirim. Jazakallah khair!"); }} />}
       {toast && <div className="toast" role="status">{toast}</div>}
+    {askExit && (
+        <>
+          <div className="scrim" onClick={stay} />
+          <div className="sheet exit-sheet" role="alertdialog" aria-modal="true" aria-labelledby="ex-title" aria-describedby="ex-sub">
+            <div className="wrap exit-in">
+              <h2 id="ex-title">Keluar dari Teman Safar?</h2>
+              <p id="ex-sub" className="sub">{exitHint ? "Tekan tombol kembali di HP sekali lagi untuk keluar." : "Kalau lagi navigasi, panduan suaranya ikut berhenti."}</p>
+              <div className="exit-btns">
+                <button type="button" className="btn" onClick={stay} autoFocus>Tetap di sini</button>
+                <button type="button" className="btn primary" onClick={leave}>Keluar</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
