@@ -580,3 +580,15 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .exit-in { padding-block: 20px 4px; display: flex; flex-direction: column; gap: 14px; }
 .exit-in .sub { margin: -6px 0 0; }
 .exit-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* rekap perjalanan */
+.recap { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 4px; }
+.recap-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.recap-stats div { background: var(--chip); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.recap-stats small { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.recap-stats b { font-family: var(--display); font-size: 1.15rem; white-space: nowrap; }
+.recap-line { margin: 0; color: var(--muted); font-size: .88rem; }
+.recap-stops { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: .9rem; }
+.recap-stops li { display: flex; gap: 8px; align-items: baseline; }
+.recap-stops em { font-style: normal; font-weight: 800; color: var(--sign); min-width: 58px; }
+.row2.one { grid-template-columns: 1fr; }
