@@ -11,5 +11,5 @@ export function GET() {
   const body = prints.length
     ? [{ relation: ["delegate_permission/common.handle_all_urls"], target: { namespace: "android_app", package_name: pkg, sha256_cert_fingerprints: prints } }]
     : [];
-  return Response.json(body, { headers: { "Cache-Control": "public, max-age=3600" } });
+  return Response.json(body, { headers: { "Cache-Control": "public, max-age=300" } });
 }
