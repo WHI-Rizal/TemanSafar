@@ -12,7 +12,7 @@ const EN = () => voiceLang() === "en";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
 import { jam, nextPrayer, currentEnds, prayerNow, SHALAT } from "../lib/prayer";
-import { project, pointAt, headingAt, sample, hav } from "../lib/geo";
+import { project, pointAt, headingAt, sample, hav, bearing as bearingOf } from "../lib/geo";
 import {
   geocode, fetchRoute, fetchPois, placePois, pickStops, stepIndexAt, durAt, etaAt,
   instr, iconKey, fmtDist, sayDist, fmtDur, roadName, ROUTE_PROVIDER, MODES,
@@ -122,6 +122,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const [target, setTarget] = useState(null);    // masjid tujuan kalau berangkat dari mode tanpa tujuan
 
   const watch = useRef(null), wake = useRef(null), said = useRef(new Set()), poiCache = useRef(new Map());
+  const lastPos = useRef(null);
   const lastFetch = useRef(-1e9), off = useRef(0), lastReroute = useRef(0), factor = useRef(1), started = useRef(null), seg = useRef(1);
   const routeRef = useRef(null); routeRef.current = route;
   const trip = useRef(null); // catatan perjalanan buat kartu Story: { from, to, km, start, stops }
@@ -191,14 +192,19 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     const el = (t - started.current.t) / 1000, pred = durAt(rt, pr.along) - durAt(rt, started.current.along);
     if (el > 300 && pred > 60) factor.current = factor.current * 0.8 + Math.max(0.6, Math.min(2.5, el / pred)) * 0.2;
 
-    // keluar rute → hitung ulang
+    // arah kendaraan: dari GPS kalau lagi jalan, kalau nggak ada pakai arah dari posisi sebelumnya
+    let head = (f.speed || 0) > 2 && typeof f.heading === "number" && !isNaN(f.heading) ? f.heading : null;
+    if (head == null && lastPos.current && hav(lastPos.current, p) > 15) head = bearingOf(lastPos.current, p);
+    if (!lastPos.current || hav(lastPos.current, p) > 15) lastPos.current = p;
+
+    // keluar rute → hitung ulang dari posisi sekarang, searah jalan yang lagi dilewati
     if (pr.dist > OFF_ROUTE_M && (f.acc || 0) < 60) off.current++; else off.current = 0;
     if (off.current >= 3 && t - lastReroute.current > 15000 && !f.sim) {
       lastReroute.current = t; off.current = 0;
       speak(EN() ? "Rerouting" : "Rute dihitung ulang", muted);
       setRerouting(true);
       const destPt = rt.line.coords[rt.line.coords.length - 1];
-      fetchRoute([p, ...(stop && !atStop ? [[stop.lon, stop.lat]] : []), destPt], routeOpts).then((nr) => {
+      fetchRoute([p, ...(stop && !atStop ? [[stop.lon, stop.lat]] : []), destPt], { ...routeOpts, heading: head }).then((nr) => {
         setRoute(nr); routeRef.current = nr; seg.current = 1; started.current = null;
         setPois(placePois(nr, [...poiCache.current.values()])); loadPois(nr, 0);
       }).catch(() => {}).finally(() => setRerouting(false));
