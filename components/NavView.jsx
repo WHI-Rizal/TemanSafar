@@ -123,6 +123,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
 
   const watch = useRef(null), wake = useRef(null), said = useRef(new Set()), poiCache = useRef(new Map());
   const lastPos = useRef(null);
+  const arrivedRef = useRef(false), slowSince = useRef(0), tripPt = useRef(null);
   const lastFetch = useRef(-1e9), off = useRef(0), lastReroute = useRef(0), factor = useRef(1), started = useRef(null), seg = useRef(1);
   const routeRef = useRef(null); routeRef.current = route;
   const trip = useRef(null); // catatan perjalanan buat kartu Story: { from, to, km, start, stops }
@@ -180,8 +181,13 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   // ---------- proses tiap posisi ----------
   const onFix = useCallback((f) => {
     const rt = routeRef.current;
-    if (!rt) return;
+    if (!rt || arrivedRef.current) return;
     const p = [f.lon, f.lat];
+    // jarak yang beneran ditempuh, buat rekap perjalanan (loncatan GPS nggak dihitung)
+    if (trip.current && (f.acc || 0) < 60) {
+      if (tripPt.current) { const d = hav(tripPt.current, p); if (d >= 5 && d < 800) { trip.current.meters = (trip.current.meters || 0) + d; tripPt.current = p; } else if (d >= 800) tripPt.current = p; }
+      else tripPt.current = p;
+    }
     let pr = project(rt.line, p, seg.current - 3, seg.current + 400);
     if (!pr || pr.dist > OFF_ROUTE_M) pr = project(rt.line, p);
     seg.current = pr.seg;
@@ -199,7 +205,10 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
 
     // keluar rute → hitung ulang dari posisi sekarang, searah jalan yang lagi dilewati
     if (pr.dist > OFF_ROUTE_M && (f.acc || 0) < 60) off.current++; else off.current = 0;
-    if (off.current >= 3 && t - lastReroute.current > 15000 && !f.sim) {
+    const endPt = rt.line.coords[rt.line.coords.length - 1];
+    const goal = target || dest;
+    const nearEnd = Math.min(hav(p, endPt), goal ? hav(p, [goal.lon, goal.lat]) : Infinity);
+    if (off.current >= 3 && t - lastReroute.current > 15000 && !f.sim && nearEnd > 200) {
       lastReroute.current = t; off.current = 0;
       speak(EN() ? "Rerouting" : "Rute dihitung ulang", muted);
       setRerouting(true);
@@ -220,8 +229,18 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     const remain = rt.distance - along;
     const wp = rt.steps.find((s) => s.waypoint);
     if (wp && !atStop && along >= wp.along - 50 && along < wp.along + 600) { setAtStop(true); logStop(stop); speak(EN() ? `You have arrived at ${stop?.nama || "your stop"}` : `Sampai di ${stop?.nama || "tempat singgah"}`, muted); }
-    if (remain < 40) { setPhase("arrived"); if (target) logStop(target); speak(EN() ? "You have arrived. Alhamdulillah." : "Sampai di tujuan. Alhamdulillah.", muted); }
-  }, [loadPois, muted, setLiveFix, stop, atStop, mode, avoidToll, target]);
+    // sampai: dekat ujung rute, dekat titik tujuan (rumah sering masuk gang, di luar jalan yang ada di peta),
+    // atau udah berhenti lama di 300 m terakhir
+    if ((f.speed || 0) < 1.5 && remain < 300) { if (!slowSince.current) slowSince.current = t; } else slowSince.current = 0;
+    const stopped = slowSince.current && t - slowSince.current > 25000;
+    if (remain < 60 || nearEnd < 70 || stopped) {
+      arrivedRef.current = true;
+      if (trip.current) trip.current.end = t;
+      setPhase("arrived"); if (target) logStop(target);
+      speak(EN() ? "You have arrived. Alhamdulillah." : "Sampai di tujuan. Alhamdulillah.", muted);
+      if (!target && watch.current != null) { navigator.geolocation.clearWatch(watch.current); watch.current = null; }
+    }
+  }, [loadPois, muted, setLiveFix, stop, atStop, mode, avoidToll, target, dest]);
 
   // ---------- mulai / berhenti ----------
   const keepAwake = async () => { try { if ("wakeLock" in navigator) wake.current = await navigator.wakeLock.request("screen"); } catch {} };
@@ -233,6 +252,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
 
   const begin = (rt = route, simulated = !!origin) => {
     said.current = new Set(); started.current = null; factor.current = 1; off.current = 0;
+    arrivedRef.current = false; slowSince.current = 0; tripPt.current = null;
     keepAwake();
     try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch {}
     {
@@ -243,7 +263,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       else { voiceSpeak("", { urgent: true }); playDoa(() => setDoaAir(true)).then(() => { setDoaAir(false); speak(first, muted); }); }
     } // juga membuka izin suara di iOS
     setFollow(true); setSheet(false); setPhase("nav");
-    if (!trip.current) trip.current = { from: origin?.nama || "", to: dest?.nama || target?.nama || "Tujuan", km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [] };
+    if (!trip.current) trip.current = { from: origin?.nama || "", to: dest?.nama || target?.nama || "Tujuan", km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [], meters: 0 };
     if (simulated) { setSim({ realStart: Date.now(), simStart: Date.now() }); return; }
     watch.current = navigator.geolocation.watchPosition(
       (p) => onFixRef.current({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, speed: p.coords.speed, heading: p.coords.heading, t: Date.now() }),
@@ -253,7 +273,20 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   };
   const onFixRef = useRef(onFix); onFixRef.current = onFix;
 
+  // tombol ✕ di tengah jalan: kalau udah jalan lumayan, tampilkan rekap dulu, bukan langsung hilang
+  const finish = () => {
+    const tr = trip.current;
+    const mins = tr ? (clockRef.current() - tr.start) / 60000 : 0;
+    if (tr && ((tr.meters || 0) > 1000 || mins > 5)) {
+      tr.end = clockRef.current(); tr.early = true; arrivedRef.current = true;
+      if (watch.current != null) navigator.geolocation.clearWatch(watch.current);
+      watch.current = null; setSim(null); voiceStop(); stopDoa();
+      try { wake.current?.release(); } catch {}
+      setPhase("summary");
+    } else end();
+  };
   const end = () => {
+    arrivedRef.current = false;
     if (watch.current != null) navigator.geolocation.clearWatch(watch.current);
     watch.current = null; setSim(null);
     try { wake.current?.release(); } catch {}
@@ -271,7 +304,8 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const share = async () => {
     const tr = trip.current; if (!tr) return;
     setSharing(true);
-    try { await shareStory({ ...tr, mins: Math.max(1, Math.round((clockRef.current() - tr.start) / 60000)) }); } catch {}
+    const km = tr.meters > 500 ? Math.max(1, Math.round(tr.meters / 1000)) : tr.km;
+    try { await shareStory({ ...tr, km, mins: Math.max(1, Math.round(((tr.end || clockRef.current()) - tr.start) / 60000)) }); } catch {}
     setSharing(false);
   };
   const ShareBtn = () => (
@@ -280,6 +314,29 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       {sharing ? "Menyiapkan gambar…" : "Bagikan ke Story"}
     </button>
   );
+
+  // rekap perjalanan: jarak, lama, singgah shalat
+  const Recap = () => {
+    const tr = trip.current; if (!tr) return null;
+    const endT = tr.end || clockRef.current();
+    const mins = Math.max(1, Math.round((endT - tr.start) / 60000));
+    const km = tr.meters > 300 ? tr.meters / 1000 : tr.early ? 0 : tr.km;
+    const kmTxt = km >= 10 ? `${Math.round(km)} km` : `${km.toFixed(1).replace(".", ",")} km`;
+    const durTxt = mins >= 60 ? `${Math.floor(mins / 60)} j ${mins % 60} mnt` : `${mins} mnt`;
+    return (
+      <div className="recap">
+        <div className="recap-stats">
+          <div><small>Jarak</small><b>{kmTxt}</b></div>
+          <div><small>Lama</small><b>{durTxt}</b></div>
+          <div><small>Singgah</small><b>{tr.stops.length ? `${tr.stops.length}×` : "–"}</b></div>
+        </div>
+        <p className="recap-line">{tr.from ? `${tr.from} → ` : ""}{tr.to} · berangkat {jam(tr.start)}, {tr.early ? "berhenti" : "tiba"} {jam(endT)}</p>
+        {tr.stops.length > 0 && (
+          <ul className="recap-stops">{tr.stops.map((s) => <li key={s.nama}>{s.prayer ? <em>{s.prayer}</em> : null}{s.nama}</li>)}</ul>
+        )}
+      </div>
+    );
+  };
 
   // dari mode tanpa tujuan: langsung dituntun ke masjid yang dipilih
   const startTo = async (p, here, simulated) => {
@@ -290,7 +347,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     setOrigin(simulated ? { nama: "Posisi simulasi", lon: from[0], lat: from[1] } : null);
     setTarget({ ...p, simulated });
     const rt = await plan(from, { lon: p.lon, lat: p.lat }, null, "setup");
-    if (rt) { setStop(null); setAtStop(false); setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); trip.current = { from: "", to: p.nama, km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [] }; begin(rt, simulated); }
+    if (rt) { setStop(null); setAtStop(false); setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); trip.current = { from: "", to: p.nama, km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [], meters: 0 }; begin(rt, simulated); }
   };
   const backToFree = () => { const s = !!target?.simulated; end(); setFree({ simulate: s }); };
   useEffect(() => () => { if (watch.current != null) navigator.geolocation.clearWatch(watch.current); }, []);
@@ -491,7 +548,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
             <span>{fmtDist(remain)} · tiba ± {jam(now + remainSec * 1000)}</span>
             {(stop || mainPick?.poi) && <small className="mini-pick">{stop ? `Singgah: ${stop.nama} · ${fmtDist(Math.max(0, (route.steps.find((s) => s.waypoint)?.along || 0) - along))}` : `${mainPick.nama}: ${mainPick.poi.nama} · ${fmtDist(mainPick.poi.along - along)}`}</small>}
           </button>
-          <button className="xbtn" type="button" onClick={end} aria-label="Akhiri navigasi">✕</button>
+          <button className="xbtn" type="button" onClick={finish} aria-label="Akhiri navigasi">✕</button>
         </div>
       ) : null}>
           {phase === "preview" && (
@@ -512,7 +569,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
             <>
               <div className="eta-row">
                 <div><b className="eta-big">{fmtDur(remainSec)}</b><span>{fmtDist(remain)} · tiba ± {jam(now + remainSec * 1000)}{sim ? " · simulasi" : ""}</span></div>
-                <button className="xbtn" type="button" onClick={end} aria-label="Akhiri navigasi">✕</button>
+                <button className="xbtn" type="button" onClick={finish} aria-label="Akhiri navigasi">✕</button>
               </div>
               {stop ? (
                 <div className="pickcard"><div><small>Menuju singgahan</small><b>{stop.nama}</b><span>{fmtDist(Math.max(0, (route.steps.find((s) => s.waypoint)?.along || 0) - along))} lagi</span></div>
@@ -550,7 +607,10 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
           )}
 
           {phase === "arrived" && !target && (
-            <div className="arrive"><b>Sampai di tujuan. Alhamdulillah.</b><div className="row2"><button className="bigbtn" type="button" onClick={end}>Selesai</button></div><ShareBtn /><WhiCta place="tujuan" /></div>
+            <div className="arrive"><b>Sampai di tujuan. Alhamdulillah.</b><Recap /><ShareBtn /><div className="row2 one"><button className="bigbtn" type="button" onClick={end}>Selesai</button></div><WhiCta place="tujuan" /></div>
+          )}
+          {phase === "summary" && (
+            <div className="arrive"><b>Perjalanan selesai</b><span>Ini rekap perjalanan kamu sampai sekarang.</span><Recap /><ShareBtn /><div className="row2 one"><button className="bigbtn" type="button" onClick={end}>Tutup</button></div></div>
           )}
           {phase === "arrived" && target && (
             <div className="arrive">
