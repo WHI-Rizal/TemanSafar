@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { jam, timesAt, prayerNow, nextPrayer, currentEnds, SHALAT } from "../lib/prayer";
+import { jam, timesAt, prayerNow, nextPrayer, currentEnds, SHALAT, ORDER_P } from "../lib/prayer";
 import { loadVoices, voicesFor, getPrefs, setPrefs, speak } from "../lib/voice";
 import { waLink, paketLink } from "../lib/whi";
 import { doaReady } from "../lib/doaSafar";
@@ -17,6 +17,22 @@ function greet(h) {
 function dur(min) {
   min = Math.max(0, Math.round(min));
   return min < 60 ? `${min} mnt` : `${Math.floor(min / 60)} j ${String(min % 60).padStart(2, "0")} mnt`;
+}
+
+// Lingkaran hitung mundur di kartu shalat mode ringkas. Makin penuh makin dekat waktunya.
+function Ring({ frac, min, sub }) {
+  const r = 30, C = 2 * Math.PI * r;
+  min = Math.max(0, Math.round(min));
+  const big = min < 60 ? `${min} mnt` : `${Math.floor(min / 60)}j ${min % 60}m`;
+  return (
+    <svg className="pc-ring" width="76" height="76" viewBox="0 0 76 76" aria-hidden="true">
+      <circle className="ring-b" cx="38" cy="38" r={r} fill="none" strokeWidth="7" />
+      <circle className="ring-f" cx="38" cy="38" r={r} fill="none" strokeWidth="7" strokeLinecap="round"
+        strokeDasharray={`${C * Math.min(1, Math.max(0.02, frac))} ${C}`} transform="rotate(-90 38 38)" />
+      <text className="ring-t" x="38" y="40" textAnchor="middle">{big}</text>
+      <text className="ring-s" x="38" y="51" textAnchor="middle">{sub}</text>
+    </svg>
+  );
 }
 
 const Ic = {
@@ -114,6 +130,19 @@ export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, fo
   const nx = nextPrayer(now, here[1], here[0]);
   const h = new Date(now + 7 * 3600e3).getUTCHours();
   const active = ends && SHALAT.includes(ends.nama);
+  // Yang dihitung mundur: akhir waktu shalat yang sedang berjalan, atau masuknya shalat berikutnya.
+  // "from" = titik awal lingkaran, yaitu waktu terakhir yang udah lewat (Terbit ikut dihitung).
+  let target = { nama: "–", at: now, from: now - 1 };
+  if (active) target = { nama: ends.nama, at: ends.ends, from: times[ends.nama] };
+  else if (nx) {
+    const past = ORDER_P.map((k) => times[k]).filter((t) => t <= now);
+    const from = past.length ? Math.max(...past) : timesAt(now - 864e5, here[1], here[0]).Isya;
+    target = { nama: nx.nama, at: nx.ms, from };
+  }
+  const left = (target.at - now) / 60e3;
+  const frac = (now - target.from) / Math.max(1, target.at - target.from);
+  const warn = left <= 15;
+  const lbl = active ? (warn ? "Segera habis" : "Sekarang waktu") : warn ? "Sebentar lagi masuk" : "Shalat berikutnya";
 
   return (
     <div className="home">
@@ -124,25 +153,39 @@ export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, fo
             <Clock />
           </div>
           <h2>Mau safar ke mana hari ini?</h2>
-          <div className={`pcard ${short ? "short" : ""}`} aria-live="polite">
-            <button type="button" className="pc-tog" onClick={() => toggleShort(!short)} aria-expanded={!short} aria-label={short ? "Tampilkan jadwal 5 waktu" : "Ringkas jadwal shalat"}>{short ? "▾" : "▴"}</button>
-            <div className="pcard-top">
-              <div>
-                <span className="pc-lbl">{active ? "Sekarang waktu" : "Shalat berikutnya"}</span>
-                <b className="pc-name">{active ? ends.nama : nx?.nama}</b>
-                {!active && nx && <span className="pc-time">{jam(nx.ms)}</span>}
+          <div className={`pcard ${short ? "short" : ""} ${warn ? "warn" : ""}`} role="button" tabIndex={0} aria-expanded={!short}
+            aria-label={`${lbl} ${target.nama}, ${active ? "sisa" : "lagi"} ${dur(left)}. Ketuk untuk ${short ? "lihat jadwal 5 waktu" : "ringkas"}`}
+            onClick={() => toggleShort(!short)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleShort(!short); } }}>
+            {short ? (
+              <div className="pc-short">
+                <Ring frac={frac} min={left} sub={active ? "sisa" : "lagi"} />
+                <div className="pc-info">
+                  <span className="pc-lbl">{lbl} <span className="pc-chev" aria-hidden="true">▾</span></span>
+                  <b className="pc-name">{target.nama}</b>
+                  <span className="pc-sub">{active ? "Sampai pukul" : "Masuk pukul"} <b>{jam(target.at)}</b></span>
+                </div>
               </div>
-              <div className="pc-right">
-                <span className="pc-lbl">{active ? "Sisa waktu" : "Lagi"}</span>
-                <b className="pc-cd">{active ? dur((ends.ends - now) / 60e3) : nx ? dur((nx.ms - now) / 60e3) : "–"}</b>
-              </div>
-            </div>
-            <div className="pc-row">
-              {SHALAT.map((p) => (
-                <div key={p} className={cur === p ? "on" : ""}><span>{p}</span><b>{jam(times[p])}</b></div>
-              ))}
-            </div>
-            <p className="pc-where">{gps ? "Dihitung dari lokasi kamu sekarang" : "Contoh untuk Jakarta. Izinkan lokasi biar jadwalnya pas"} · metode Kemenag</p>
+            ) : (
+              <>
+                <div className="pcard-top">
+                  <div>
+                    <span className="pc-lbl">{lbl} <span className="pc-chev" aria-hidden="true">▴</span></span>
+                    <b className="pc-name">{target.nama}</b>
+                    <span className="pc-time">{active ? `sampai ${jam(target.at)}` : jam(target.at)}</span>
+                  </div>
+                  <div className="pc-right">
+                    <span className="pc-lbl">{active ? "Sisa waktu" : "Lagi"}</span>
+                    <b className="pc-cd">{dur(left)}</b>
+                  </div>
+                </div>
+                <div className="pc-row">
+                  {SHALAT.map((p) => (
+                    <div key={p} className={cur === p ? "on" : ""}><span>{p}</span><b>{jam(times[p])}</b></div>
+                  ))}
+                </div>
+                <p className="pc-where">{gps ? "Dihitung dari lokasi kamu sekarang" : "Contoh untuk Jakarta. Izinkan lokasi biar jadwalnya pas"} · metode Kemenag</p>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -194,4 +237,3 @@ export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, fo
     </div>
   );
 }
-
