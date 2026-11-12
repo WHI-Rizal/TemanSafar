@@ -580,6 +580,8 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .exit-in { padding-block: 20px 4px; display: flex; flex-direction: column; gap: 14px; }
 .exit-in .sub { margin: -6px 0 0; }
 .exit-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.exit-btns.one { grid-template-columns: 1fr; }
+.exit-in .sub b { color: var(--ink); }
 
 /* rekap perjalanan */
 .recap { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 4px; }
