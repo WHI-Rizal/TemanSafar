@@ -28,6 +28,8 @@ const Ic = {
   people: <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0" /><path d="M16 4a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.6" /></svg>,
 };
 
+const BULAN_H = ["Muharram", "Safar", "Rabiulawal", "Rabiulakhir", "Jumadilawal", "Jumadilakhir", "Rajab", "Syakban", "Ramadan", "Syawal", "Zulkaidah", "Zulhijah"];
+
 // Jam berjalan (WIB) + tanggal Masehi & Hijriah. Dipisah biar detiknya nggak bikin seluruh halaman render ulang.
 function Clock() {
   const [t, setT] = useState(Date.now());
@@ -36,10 +38,14 @@ function Clock() {
   const hm = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false }).format(d).replace(":", ".");
   const sec = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", second: "2-digit" }).format(d).padStart(2, "0");
   const masehi = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(d);
+  // Nama bulan hijriah ditulis sendiri. Banyak browser HP nggak punya nama bulan hijriah bahasa Indonesia,
+  // jadi yang keluar malah "Juni ... SM". Angkanya tetap diambil dari kalender Umm al-Qura.
   let hijri = "";
   try {
-    hijri = new Intl.DateTimeFormat("id-ID-u-ca-islamic-umalqura", { timeZone: "Asia/Jakarta", day: "numeric", month: "long", year: "numeric" }).format(d)
-      .replace(/\s*(SH|H|AH)\.?$/i, "") + " H";
+    const parts = new Intl.DateTimeFormat("en-US-u-ca-islamic-umalqura-nu-latn", { timeZone: "Asia/Jakarta", day: "numeric", month: "numeric", year: "numeric" }).formatToParts(d);
+    const get = (t) => parseInt(parts.find((x) => x.type === t)?.value, 10);
+    const [hd, hmo, hy] = [get("day"), get("month"), get("year")];
+    if (hd && hmo >= 1 && hmo <= 12 && hy) hijri = `${hd} ${BULAN_H[hmo - 1]} ${hy} H`;
   } catch {}
   return (
     <div className="clock" aria-label={`Sekarang pukul ${hm} WIB`}>
