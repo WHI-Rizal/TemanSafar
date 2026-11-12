@@ -594,3 +594,12 @@ textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 9px; pad
 .recap-stops li { display: flex; gap: 8px; align-items: baseline; }
 .recap-stops em { font-style: normal; font-weight: 800; color: var(--sign); min-width: 58px; }
 .row2.one { grid-template-columns: 1fr; }
+
+.recap-route { display: block; width: 100%; height: auto; max-height: 140px; background: var(--sign-deep); border-radius: 12px; }
+.recap-route path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.recap-route .rr-glow { stroke: rgba(255,179,126,.3); stroke-width: 9; }
+.recap-route .rr-line { stroke: #fff; stroke-width: 3.5; }
+.recap-route .rr-dash { stroke: rgba(255,255,255,.8); stroke-width: 3; stroke-dasharray: 1 7; }
+.recap-route .rr-stop { fill: #F0641B; stroke: #fff; stroke-width: 1.5; }
+.recap-route .rr-start { fill: #0A655A; stroke: #fff; stroke-width: 2.5; }
+.recap-route .rr-end { fill: #FFB37E; stroke: #0A655A; stroke-width: 2.5; }
