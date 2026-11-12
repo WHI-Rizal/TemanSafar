@@ -95,9 +95,9 @@ function VoiceSettings() {
 
 export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, footnote }) {
   const [now, setNow] = useState(Date.now());
-  // kartu jadwal bisa diringkas (sisa nama shalat + sisa waktu), pilihan diingat
-  const [short, setShort] = useState(false);
-  useEffect(() => { try { setShort(localStorage.getItem("ts-pcard") === "short"); } catch {} }, []);
+    // default ringkas, biar pengguna baru langsung lihat kolom tujuan. Kebuka kalau pernah dibuka sendiri.
+  const [short, setShort] = useState(true);
+  useEffect(() => { try { setShort(localStorage.getItem("ts-pcard") !== "open"); } catch {} }, []);
   const toggleShort = (v) => { setShort(v); try { localStorage.setItem("ts-pcard", v ? "short" : "open"); } catch {} };
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(id); }, []);
 
