@@ -12,9 +12,9 @@ const EN = () => voiceLang() === "en";
 import { CITIES } from "../lib/route";
 import { merged, ago } from "../lib/data";
 import { jam, nextPrayer, currentEnds, prayerNow, SHALAT } from "../lib/prayer";
-import { project, pointAt, headingAt, sample, hav, bearing as bearingOf } from "../lib/geo";
+import { project, pointAt, headingAt, sample, slice, hav, bearing as bearingOf } from "../lib/geo";
 import {
-  geocode, fetchRoute, fetchPois, placePois, pickStops, stepIndexAt, durAt, etaAt,
+  geocode, placeName, fetchRoute, fetchPois, placePois, pickStops, stepIndexAt, durAt, etaAt,
   instr, iconKey, fmtDist, sayDist, fmtDur, roadName, ROUTE_PROVIDER, MODES,
 } from "../lib/nav";
 
@@ -87,6 +87,37 @@ function PlaceField({ id, label, value, onPick, placeholder, near, allowMe }) {
         </ul>
       )}
     </div>
+  );
+}
+
+// "Jalan X, Gambir, Jakarta Pusat, DKI Jakarta" -> "Gambir, Jakarta Pusat"
+function shortArea(detail, name) {
+  const parts = String(detail || "").split(",").map((t) => t.trim()).filter((t) => t && t !== name && !/^(jl|jalan|gg|gang)\b/i.test(t));
+  return parts.length > 2 ? parts.slice(-3, -1).join(", ") : parts.join(", ");
+}
+
+// garis rute kecil di kartu rekap (sama kayak di Story, tanpa peta)
+function RouteMini({ track, stops }) {
+  const W = 320, H = 120, pad = 14;
+  const lat0 = track.reduce((a, p) => a + p[1], 0) / track.length, k = Math.cos(lat0 * Math.PI / 180);
+  const xs = track.map((p) => p[0] * k), ys = track.map((p) => -p[1]);
+  const mnX = Math.min(...xs), mxX = Math.max(...xs), mnY = Math.min(...ys), mxY = Math.max(...ys);
+  const sc = Math.min((W - pad * 2) / Math.max(1e-6, mxX - mnX), (H - pad * 2) / Math.max(1e-6, mxY - mnY));
+  const ox = (W - (mxX - mnX) * sc) / 2, oy = (H - (mxY - mnY) * sc) / 2;
+  const P = (p) => [(ox + (p[0] * k - mnX) * sc).toFixed(1), (oy + (-p[1] - mnY) * sc).toFixed(1)];
+  const solid = [], dash = [];
+  for (let i = 1; i < track.length; i++) {
+    const seg = `M${P(track[i - 1]).join(" ")}L${P(track[i]).join(" ")}`;
+    (track[i][2] === 1 || track[i - 1][2] === 1 ? dash : solid).push(seg);
+  }
+  const s0 = P(track[0]), s1 = P(track[track.length - 1]);
+  return (
+    <svg className="recap-route" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Gambar rute yang dilewati">
+      <path d={solid.join("")} className="rr-glow" /><path d={solid.join("")} className="rr-line" />
+      {dash.length > 0 && <path d={dash.join("")} className="rr-dash" />}
+      {(stops || []).filter((s) => s.lon != null).map((s) => { const [a, b] = P([s.lon, s.lat]); return <circle key={s.nama} cx={a} cy={b} r="5" className="rr-stop" />; })}
+      <circle cx={s0[0]} cy={s0[1]} r="5" className="rr-start" /><circle cx={s1[0]} cy={s1[1]} r="6" className="rr-end" />
+    </svg>
   );
 }
 
@@ -183,10 +214,29 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     const rt = routeRef.current;
     if (!rt || arrivedRef.current) return;
     const p = [f.lon, f.lat];
-    // jarak yang beneran ditempuh, buat rekap perjalanan (loncatan GPS nggak dihitung)
+    // jejak perjalanan buat rekap & Story: titik GPS tiap ±30 m + jarak yang beneran ditempuh.
+    // Kalau GPS sempat hilang (> 800 m tanpa catatan, misal aplikasi ditinggal), bagian itu ditambal
+    // pakai rute rencana dan ditandai [lon, lat, 1] biar di gambar jadi garis titik-titik.
     if (trip.current && (f.acc || 0) < 60) {
-      if (tripPt.current) { const d = hav(tripPt.current, p); if (d >= 5 && d < 800) { trip.current.meters = (trip.current.meters || 0) + d; tripPt.current = p; } else if (d >= 800) tripPt.current = p; }
-      else tripPt.current = p;
+      const tr = trip.current; tr.track = tr.track || [];
+      const r5 = (q) => [Math.round(q[0] * 1e5) / 1e5, Math.round(q[1] * 1e5) / 1e5];
+      const last = tripPt.current;
+      if (!last) { tr.track.push(r5(p)); tripPt.current = p; }
+      else {
+        const d = hav(last, p);
+        if (d >= 800) {
+          const a = project(rt.line, last), b = project(rt.line, p);
+          if (a && b && a.dist < 300 && b.dist < 300 && b.along > a.along && b.along - a.along < d * 3) {
+            let prev = null;
+            for (const q of slice(rt.line, a.along, b.along)) { if (!prev || hav(prev, q) >= 60) { tr.track.push([...r5(q), 1]); prev = q; } }
+            tr.meters = (tr.meters || 0) + (b.along - a.along);
+          } else {
+            tr.track.push([...r5([(last[0] + p[0]) / 2, (last[1] + p[1]) / 2]), 1]);
+            tr.meters = (tr.meters || 0) + d;
+          }
+          tr.track.push(r5(p)); tripPt.current = p;
+        } else if (d >= 30) { tr.meters = (tr.meters || 0) + d; tr.track.push(r5(p)); tripPt.current = p; }
+      }
     }
     let pr = project(rt.line, p, seg.current - 3, seg.current + 400);
     if (!pr || pr.dist > OFF_ROUTE_M) pr = project(rt.line, p);
@@ -263,7 +313,10 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       else { voiceSpeak("", { urgent: true }); playDoa(() => setDoaAir(true)).then(() => { setDoaAir(false); speak(first, muted); }); }
     } // juga membuka izin suara di iOS
     setFollow(true); setSheet(false); setPhase("nav");
-    if (!trip.current) trip.current = { from: origin?.nama || "", to: dest?.nama || target?.nama || "Tujuan", km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [], meters: 0 };
+    if (!trip.current) {
+      trip.current = { from: origin?.nama || "", fromArea: shortArea(origin?.detail, origin?.nama), to: dest?.nama || target?.nama || "Tujuan", toArea: shortArea(dest?.detail, dest?.nama), km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [], meters: 0, track: [] };
+      nameStart(trip.current, rt);
+    }
     if (simulated) { setSim({ realStart: Date.now(), simStart: Date.now() }); return; }
     watch.current = navigator.geolocation.watchPosition(
       (p) => onFixRef.current({ lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy, speed: p.coords.speed, heading: p.coords.heading, t: Date.now() }),
@@ -299,13 +352,14 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
   const logStop = (p) => {
     if (!p || !trip.current) return;
     const t = clockRef.current(), pr = prayerNow(t, p.lat, p.lon);
-    if (!trip.current.stops.some((s) => s.nama === p.nama)) trip.current.stops.push({ nama: p.nama, prayer: SHALAT.includes(pr) ? pr : "" });
+    if (!trip.current.stops.some((s) => s.nama === p.nama)) trip.current.stops.push({ nama: p.nama, prayer: SHALAT.includes(pr) ? pr : "", lon: p.lon, lat: p.lat });
   };
   const share = async () => {
     const tr = trip.current; if (!tr) return;
     setSharing(true);
-    const km = tr.meters > 500 ? Math.max(1, Math.round(tr.meters / 1000)) : tr.km;
-    try { await shareStory({ ...tr, km, mins: Math.max(1, Math.round(((tr.end || clockRef.current()) - tr.start) / 60000)) }); } catch {}
+    // jarak sama persis kayak di kartu rekap: di bawah 10 km pakai satu angka di belakang koma
+    const km = tr.meters > 300 ? (tr.meters < 10000 ? (tr.meters / 1000).toFixed(1).replace(".", ",") : Math.round(tr.meters / 1000)) : tr.km;
+    try { await shareStory({ ...tr, km, patchStyle: "dash", mins: Math.max(1, Math.round(((tr.end || clockRef.current()) - tr.start) / 60000)) }); } catch {}
     setSharing(false);
   };
   const ShareBtn = () => (
@@ -314,6 +368,13 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
       {sharing ? "Menyiapkan gambar…" : "Bagikan ke Story"}
     </button>
   );
+
+  // titik berangkat dari GPS belum punya nama: tanya nama daerahnya (kelurahan/kecamatan + kota)
+  const nameStart = (tr, rt) => {
+    if (tr.from) return;
+    const s0 = rt?.line?.coords?.[0]; if (!s0) return;
+    placeName(s0[0], s0[1]).then((n) => { if (n && trip.current === tr && !tr.from) { tr.from = n.name; tr.fromArea = n.area; } });
+  };
 
   // rekap perjalanan: jarak, lama, singgah shalat
   const Recap = () => {
@@ -330,6 +391,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
           <div><small>Lama</small><b>{durTxt}</b></div>
           <div><small>Singgah</small><b>{tr.stops.length ? `${tr.stops.length}×` : "–"}</b></div>
         </div>
+        {tr.track?.length > 2 && <RouteMini track={tr.track} stops={tr.stops} />}
         <p className="recap-line">{tr.from ? `${tr.from} → ` : ""}{tr.to} · berangkat {jam(tr.start)}, {tr.early ? "berhenti" : "tiba"} {jam(endT)}</p>
         {tr.stops.length > 0 && (
           <ul className="recap-stops">{tr.stops.map((s) => <li key={s.nama}>{s.prayer ? <em>{s.prayer}</em> : null}{s.nama}</li>)}</ul>
@@ -347,7 +409,7 @@ export default function NavView({ reports, onReport, canReport, setLiveFix, onPl
     setOrigin(simulated ? { nama: "Posisi simulasi", lon: from[0], lat: from[1] } : null);
     setTarget({ ...p, simulated });
     const rt = await plan(from, { lon: p.lon, lat: p.lat }, null, "setup");
-    if (rt) { setStop(null); setAtStop(false); setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); trip.current = { from: "", to: p.nama, km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [], meters: 0 }; begin(rt, simulated); }
+    if (rt) { setStop(null); setAtStop(false); setState({ along: 0, point: rt.line.coords[0], bearing: headingAt(rt.line, 0), speed: 0 }); trip.current = { from: "", to: p.nama, toArea: KIND[p.kind] || "", km: Math.max(1, Math.round(rt.distance / 1000)), start: Date.now(), stops: [], meters: 0, track: [] }; nameStart(trip.current, rt); begin(rt, simulated); }
   };
   const backToFree = () => { const s = !!target?.simulated; end(); setFree({ simulate: s }); };
   useEffect(() => () => { if (watch.current != null) navigator.geolocation.clearWatch(watch.current); }, []);
