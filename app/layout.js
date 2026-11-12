@@ -9,8 +9,8 @@ export const metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Teman Safar", statusBarStyle: "default" },
   icons: {
-    icon: [{ url: "/favicon.ico", sizes: "any" }, { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
-    apple: "/icons/apple-touch-icon.png",
+    icon: [{ url: "/favicon.ico?v=2", sizes: "any" }, { url: "/icons/favicon-32.png?v=2", sizes: "32x32", type: "image/png" }, { url: "/icons/icon-192.png?v=2", sizes: "192x192", type: "image/png" }],
+    apple: "/icons/apple-touch-icon.png?v=2",
   },
   // gambar pratinjau pas link dibagikan di WhatsApp / medsos: logo WHI
   openGraph: {
