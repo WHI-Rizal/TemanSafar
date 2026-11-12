@@ -1,5 +1,6 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
+import { THEME_BOOT } from "../lib/theme";
 
 export const metadata = {
   metadataBase: new URL("https://temansafar.vercel.app"),
@@ -27,8 +28,9 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* huruf Arab buat teks doa & dzikir */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
