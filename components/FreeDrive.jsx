@@ -3,9 +3,9 @@ import NavMap from "./NavMap";
 import Sheet, { useMini } from "./Sheet";
 import { merged, ago } from "../lib/data";
 import { jam, timesAt, nextPrayer, currentEnds, prayerNow, SHALAT } from "../lib/prayer";
-import { hav, bearing } from "../lib/geo";
+import { hav, bearing, pointAt, headingAt } from "../lib/geo";
 import { snapToLines, coordAt, nearCity, LINES } from "../lib/route";
-import { fetchPois, fmtDist, sayDist, fmtDur, preferMosque } from "../lib/nav";
+import { fetchPois, fetchRoute, fmtDist, sayDist, fmtDur, preferMosque } from "../lib/nav";
 import { speak as voiceSpeak, stop as voiceStop, voiceLang } from "../lib/voice";
 
 // Mode "Jalan tanpa tujuan": cukup GPS. Jadwal shalat dari posisi, masjid & rest area asli di depan.
@@ -29,6 +29,20 @@ function isLeft(here, brg, p) {
   const a = bearing(here, [p.lon, p.lat]);
   const d = ((a - brg) + 360) % 360;
   return d > 180;
+}
+
+// Rute simulasi: Jakarta (Monas) ke Bandung (Gedung Sate) lewat jalan beneran, biar panah nempel di jalan
+// dan masjid, rest area, SPBU muncul sesuai urutan aslinya.
+const SIM_FROM = [106.8272, -6.1754], SIM_TO = [107.6188, -6.9025];
+// posisi di rute setelah t detik perjalanan (pakai perkiraan waktu per ruas dari layanan rute, jadi kecepatannya wajar)
+function alongAtTime(route, t) {
+  const { cumDur, line } = route;
+  if (t <= 0) return 0;
+  if (t >= cumDur[cumDur.length - 1]) return line.length;
+  let lo = 0, hi = cumDur.length - 1;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (cumDur[mid] <= t) lo = mid; else hi = mid; }
+  const f = (t - cumDur[lo]) / ((cumDur[hi] - cumDur[lo]) || 1);
+  return line.cum[lo] + f * (line.cum[hi] - line.cum[lo]);
 }
 
 function speak(text, muted) { voiceSpeak(text, { muted }); }
@@ -77,15 +91,31 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
     if (simulate) {
       const s = { realStart: Date.now(), simStart: Date.now() };
       simRef.current = s;
-      const tick = () => {
+      let id = null, dead = false;
+      const ctl = new AbortController();
+      // cadangan kalau rute gagal diambil: garis kasar Tol Trans Jawa seperti dulu
+      const tickLine = () => {
         const t = s.simStart + (Date.now() - s.realStart) * SIM_SPEED;
         const pos = Math.min(410, (80 * (t - s.simStart)) / 3600e3);
         const [lat, lon] = coordAt("jawa", pos);
         onFix({ lat, lon, acc: 10, speed: 22, t });
       };
-      tick();
-      const id = setInterval(tick, 1000);
-      return () => clearInterval(id);
+      fetchRoute([SIM_FROM, SIM_TO], { mode }, ctl.signal)
+        .then((rt) => {
+          if (dead) return;
+          s.realStart = Date.now();
+          const tick = () => {
+            const sec = ((Date.now() - s.realStart) * SIM_SPEED) / 1000;
+            const along = alongAtTime(rt, sec);
+            const ahead = alongAtTime(rt, sec + 5);
+            const [lon, lat] = pointAt(rt.line, along).point;
+            onFix({ lat, lon, acc: 10, speed: Math.min(30, (ahead - along) / 5) || 0, heading: headingAt(rt.line, along), t: s.simStart + sec * 1000 });
+          };
+          tick();
+          id = setInterval(tick, 1000);
+        })
+        .catch((e) => { if (dead || e.name === "AbortError") return; tickLine(); id = setInterval(tickLine, 1000); });
+      return () => { dead = true; ctl.abort(); if (id) clearInterval(id); };
     }
     if (!("geolocation" in navigator)) { setErr("HP atau browser ini nggak bisa kasih lokasi."); return; }
     watch.current = navigator.geolocation.watchPosition(
@@ -94,7 +124,7 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
     );
     return () => { if (watch.current != null) navigator.geolocation.clearWatch(watch.current); try { wake.current?.release(); } catch {} };
-  }, [simulate, onFix]);
+  }, [simulate, onFix, mode]);
 
   // ambil masjid & rest area di sekitar dan 20 km ke depan
   useEffect(() => {
@@ -183,7 +213,7 @@ export default function FreeDrive({ simulate, mode = "mobil", reports, onReport,
         <div className="banner-main">
           <div>
             <b style={{ fontSize: "1.15rem" }}>Jalan tanpa tujuan</b>
-            <span>{!fix ? "Nyari sinyal GPS…" : onToll && snap ? `${LINES[snap.line].nama} · sekitar ${nearCity(snap.line, snap.pos)}` : "Di luar tol"}{simulate ? " · simulasi" : ""}</span>
+            <span>{!fix ? (simulate ? "Menyiapkan rute simulasi…" : "Nyari sinyal GPS…") : onToll && snap ? `${LINES[snap.line].nama} · sekitar ${nearCity(snap.line, snap.pos)}` : "Di luar tol"}{simulate ? " · simulasi" : ""}</span>
           </div>
           {fix && <button type="button" className="tollbtn" aria-pressed={onToll} onClick={() => setTollOverride(!onToll)}>{onToll ? "Lagi di tol" : "Bukan tol"}</button>}
         </div>
