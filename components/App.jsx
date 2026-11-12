@@ -16,7 +16,6 @@ export default function App() {
   const [liveFix, setLiveFix] = useState(null);
   const [toast, setToast] = useState("");
   const [askExit, setAskExit] = useState(false);
-  const [exitHint, setExitHint] = useState(false);
   const now = useRef({});
   now.current = { tab, reportFor };
 
@@ -46,7 +45,7 @@ export default function App() {
       const s = now.current;
       if (s.reportFor) { setReportFor(null); arm(); }
       else if (s.tab !== "nav") { setTab("nav"); window.scrollTo({ top: 0 }); arm(); }
-      else { setExitHint(false); setAskExit(true); }
+      else setAskExit(true);
     };
     window.addEventListener("popstate", onPop);
     document.addEventListener("pointerdown", arm, true);
@@ -58,11 +57,7 @@ export default function App() {
     };
   }, []);
   const stay = () => { setAskExit(false); try { history.pushState({ ...(history.state || {}), tsGuard: 1 }, ""); } catch {} };
-  const leave = () => {
-    try { window.close(); } catch {}
-    // kalau aplikasinya nggak mau ditutup lewat kode, tombol kembali berikutnya yang nutup
-    setTimeout(() => setExitHint(true), 300);
-  };
+
 
   const pick = (t) => { setTab(t); try { if (t !== "quran") localStorage.setItem("jm-tab", t); } catch {} window.scrollTo({ top: 0 }); };
   const toggle = (k) => { const n = new Set(filters); n.has(k) ? n.delete(k) : n.add(k); setFilters(n); };
@@ -109,10 +104,9 @@ export default function App() {
           <div className="sheet exit-sheet" role="alertdialog" aria-modal="true" aria-labelledby="ex-title" aria-describedby="ex-sub">
             <div className="wrap exit-in">
               <h2 id="ex-title">Keluar dari Teman Safar?</h2>
-              <p id="ex-sub" className="sub">{exitHint ? "Tekan tombol kembali di HP sekali lagi untuk keluar." : "Kalau lagi navigasi, panduan suaranya ikut berhenti."}</p>
-              <div className="exit-btns">
-                <button type="button" className="btn" onClick={stay} autoFocus>Tetap di sini</button>
-                <button type="button" className="btn primary" onClick={leave}>Keluar</button>
+              <p id="ex-sub" className="sub">Tekan <b>tombol kembali</b> di HP sekali lagi untuk keluar. Kalau lagi navigasi, panduan suaranya ikut berhenti.</p>
+              <div className="exit-btns one">
+                <button type="button" className="btn primary" onClick={stay} autoFocus>Tetap di sini</button>
               </div>
             </div>
           </div>
