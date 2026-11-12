@@ -95,6 +95,10 @@ function VoiceSettings() {
 
 export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, footnote }) {
   const [now, setNow] = useState(Date.now());
+  // kartu jadwal bisa diringkas (sisa nama shalat + sisa waktu), pilihan diingat
+  const [short, setShort] = useState(false);
+  useEffect(() => { try { setShort(localStorage.getItem("ts-pcard") === "short"); } catch {} }, []);
+  const toggleShort = (v) => { setShort(v); try { localStorage.setItem("ts-pcard", v ? "short" : "open"); } catch {} };
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(id); }, []);
 
   const here = gps || FALLBACK;
@@ -114,7 +118,8 @@ export default function Home({ gps, children, onFree, onSim, onPlan, onQuran, fo
             <Clock />
           </div>
           <h2>Mau safar ke mana hari ini?</h2>
-          <div className="pcard" aria-live="polite">
+          <div className={`pcard ${short ? "short" : ""}`} aria-live="polite">
+            <button type="button" className="pc-tog" onClick={() => toggleShort(!short)} aria-expanded={!short} aria-label={short ? "Tampilkan jadwal 5 waktu" : "Ringkas jadwal shalat"}>{short ? "▾" : "▴"}</button>
             <div className="pcard-top">
               <div>
                 <span className="pc-lbl">{active ? "Sekarang waktu" : "Shalat berikutnya"}</span>
